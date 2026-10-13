@@ -1,0 +1,206 @@
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#0e1422;color:#e9eef7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 100% 0,#1a2b45,#0e1422 38%);min-height:100vh}.shell{width:min(1050px,94%);margin:auto;padding:26px 0 55px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:15px}h1{font-size:clamp(23px,5vw,43px);margin:6px 0}h1 span{color:#66e0c8}.eyebrow{color:#9baec8;letter-spacing:1.5px;font-size:11px;font-weight:700}.panel{border:1px solid #28374d;border-radius:16px;background:#151f32;padding:22px;margin-top:18px;box-shadow:0 9px 28px #070d1529}h2{margin:0 0 14px;font-size:20px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.primary,.secondary,.song-row,.chord{cursor:pointer;border-radius:10px;color:#eff8ff;font-weight:650;font-family:inherit;border:1px solid #3b4e64;background:#26374c;padding:10px 14px}.primary{background:#25aa93;border-color:#25aa93;color:#081d24}button:disabled{opacity:.45;cursor:wait}button:hover:not(:disabled){filter:brightness(1.12)}#notice{padding:12px 16px;border:1px solid #33465d;border-radius:10px;color:#b3c7df;min-height:40px}.error{color:#ffb4a7!important;border-color:#99534e!important}.song-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px}.song-row{text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:7px;background:#202d41}.song-row small,.muted,.hint{color:#9eb1c8;font-size:13px}audio{display:block;width:100%;margin:16px 0}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:15px 0}.controls a{color:#75e5d3;text-decoration:none}select,input[type=file]{background:#0e1726;color:#e9eef7;border:1px solid #4a5b6b;border-radius:8px;padding:9px;max-width:100%}.chord-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.chord-grid>div{background:#22334b;padding:18px;border-radius:10px}.chord-grid small{display:block;color:#9fb5d0}.chord-grid strong{display:block;font-size:40px;color:#72dfc9;margin-top:8px}.chords{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px}.chord{min-width:90px;white-space:nowrap}.chord.selected{background:#168a78;border-color:#64efd2}#upload-form{display:flex;flex-wrap:wrap;align-items:center;gap:12px}footer{text-align:center;color:#7c91aa;font-size:12px;margin:25px 0}@media(max-width:550px){header{flex-direction:column;align-items:stretch}.shell{padding-top:15px}.panel{padding:15px}.chord-grid strong{font-size:30px}}
+
+/* Capotasto — versione 2.1 */
+.capo-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;background:#1b3040;border:1px solid #355963;border-radius:12px;padding:15px;margin:16px 0}
+.capo-controls label{display:flex;flex-direction:column;gap:3px}
+.capo-controls label strong{color:#c7f9ed}
+.capo-controls label small{color:#9eb1c8}
+.capo-controls select{min-width:165px}
+.capo-controls p{flex:1 0 100%;margin:0}
+
+/* Mixer v2.3 - pulsanti OFF/ON (non semplice silenziamento grafico) */
+.stem-mixer{margin:14px 0;padding:16px;border-radius:14px;border:1px solid #3b5870;background:#1a2c3b}
+.stem-mixer-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px 12px;margin-bottom:12px}
+.stem-mixer-head small,.experimental-guitars,.mixer-note{font-size:12px;color:#aebfd2}
+.stem-buttons{display:flex;flex-wrap:wrap;gap:10px}
+.stem-toggle{padding:11px 16px;border-radius:10px;border:1px solid #536d82;background:#27384b;color:#f2f5fc;font-weight:750;cursor:pointer;font-family:inherit}
+.stem-toggle.on{border-color:#48d1af;background:#116554;color:#fff}
+.stem-toggle:disabled{opacity:.5;cursor:not-allowed}
+.experimental-guitars{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.experimental-guitars button{border:1px solid #45586b;border-radius:8px;background:#263240;color:#9cb1c3;padding:6px 12px}
+.experimental-guitars button:disabled{opacity:.6}
+.mixer-note{margin:9px 0 0}
+/* Guitar Backing Leon 2.6 - Karaoke */
+.karaoke-lines{max-height:420px;overflow-y:auto;overscroll-behavior:contain;background:#101a2c;border:1px solid #30405b;border-radius:14px;padding:1rem;scroll-behavior:smooth}
+.karaoke-line{display:flex;flex-wrap:wrap;justify-content:center;align-items:end;gap:.12rem .4rem;line-height:1.7;padding:.4rem .15rem;opacity:.5;transition:opacity .2s}
+.karaoke-line.line-current{opacity:1;background:rgba(46,196,162,.07);border-radius:10px}
+.karaoke-word-wrap{display:inline-flex;flex-direction:column;align-items:center;min-height:3rem;justify-content:end}
+.karaoke-inline-chord{font-weight:800;color:#61d8b9;font-size:.8rem;height:1.1rem}
+.karaoke-word{appearance:none;border:0;background:transparent;color:#e1e9fa;font-size:1.06rem;font-weight:600;padding:.12rem;cursor:pointer}
+.karaoke-word.sung{color:#62c5ae}.karaoke-word.singing{color:white;background:#197d77;border-radius:6px}
+.karaoke-word:hover{text-decoration:underline}
+/* v2.7: accordi e testo hanno un asse temporale comune. */
+.karaoke-lines{max-height:440px;overflow-y:auto;overflow-x:hidden;padding:.7rem;scroll-behavior:smooth}
+.karaoke-section{border-radius:11px;margin:.35rem 0;padding:.35rem .3rem;opacity:.62;transition:opacity .15s,background .15s}
+.karaoke-section.line-current{opacity:1;background:rgba(46,196,162,.09);outline:1px solid rgba(46,196,162,.22)}
+.karaoke-section-head{font-size:.75rem;color:#afc4d5;font-weight:650;margin:.15rem .5rem .3rem}
+.karaoke-instrumental .karaoke-section-head{color:#7de0c6}
+.karaoke-section-scroll{overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;border-radius:8px}
+.karaoke-timed-stage{position:relative;height:121px;min-width:0}
+.karaoke-time-chord{position:absolute;min-width:42px;max-width:105px;padding:3px 8px;border-radius:6px;background:#193e39;border:1px solid #427e71;color:#98f0d3;font-weight:800;font-size:.9rem;line-height:1.2;white-space:nowrap;cursor:pointer}
+.karaoke-time-chord.current{background:#2bb496;color:#0b1820;border-color:#a4ffe0;box-shadow:0 0 0 2px rgba(43,180,150,.18)}
+.karaoke-time-word{position:absolute;top:91px;border:0;background:transparent;color:#e5eefa;font-size:1rem;font-weight:650;white-space:nowrap;padding:2px 4px;cursor:pointer}
+.karaoke-time-word.sung{color:#82cdbb}
+.karaoke-time-word.singing{background:#167d74;border-radius:6px;color:white}
+.karaoke-time-word:hover{text-decoration:underline}
+.karaoke-no-voice{position:absolute;top:91px;left:8px;color:#9db0c3;font-size:.8rem;font-style:italic}
+.karaoke-instrumental .karaoke-timed-stage{height:121px}
+.karaoke-section-scroll::-webkit-scrollbar{height:5px}
+.karaoke-section-scroll::-webkit-scrollbar-thumb{background:#435c68;border-radius:5px}
+@media(max-width:600px){.karaoke-lines{padding:.4rem}.karaoke-time-chord{font-size:.82rem}.karaoke-time-word{font-size:.95rem}}
+
+/* 2.8: lo scorrimento resta confinato nel karaoke; la pagina non segue le sezioni. */
+.karaoke-lines{scroll-behavior:auto;overscroll-behavior:contain}
+
+
+/* 2.9 — Gestione archivio cloud */
+.cleanup-list{display:grid;gap:13px;margin:12px 0}
+.cleanup-group{border:1px solid #3b4e64;border-radius:11px;padding:12px;min-width:0}
+.cleanup-group h3{font-size:14px;margin:0 0 8px;color:#91decf}
+.cleanup-item{display:flex;align-items:flex-start;gap:10px;border-top:1px solid #334158;padding:10px 2px;cursor:pointer;overflow-wrap:anywhere}
+.cleanup-item>span{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px}
+.cleanup-item small{font-size:11px;color:#9db1c7}
+.cleanup-item input{margin:3px 0 0;flex:none;accent-color:#28bea1;width:17px;height:17px}
+.cleanup-trash{background:#542d31;border:1px solid #a86368;color:#fff;padding:10px 12px;border-radius:9px;font:inherit;font-weight:650;margin-top:8px}
+.cleanup-trash:disabled{opacity:.4;cursor:not-allowed}
+
+
+/* 2.11 — Karaoke fluido da chitarrista. Le pause brevi non occupano righe. */
+.karaoke-lines{max-height:390px;min-height:190px;overflow-y:auto;scroll-behavior:auto;scrollbar-gutter:stable;overscroll-behavior:contain;background:#101a2c}
+.karaoke-follow{position:sticky;top:-1px;z-index:4;background:#142537;border:1px solid #355e63;border-radius:12px;padding:11px 13px 9px;margin-bottom:13px;box-shadow:0 6px 18px #0b162dca}
+.karaoke-follow-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.karaoke-follow-block{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.karaoke-follow-secondary{justify-content:flex-end}
+.karaoke-follow-caption{color:#8faabc;letter-spacing:.055em;font-size:.65rem;font-weight:750}
+.karaoke-follow-now{font-size:1.7rem;line-height:1;color:#8bf3ce}
+.karaoke-follow-next{font-size:1.18rem;color:#d0e8de}
+.karaoke-follow-until{font-size:.72rem;color:#a6c7c3;white-space:nowrap}
+.karaoke-follow-rail{height:4px;background:#253b4d;border-radius:5px;margin-top:8px;overflow:hidden}
+.karaoke-follow-fill{display:block;height:100%;width:0;background:#41d5af;transition:width .10s linear}
+.karaoke-section{padding:5px 3px;margin:1px 0 7px;border-radius:9px;opacity:.56;transition:opacity .22s, background .22s}
+.karaoke-section.line-current{opacity:1;background:rgba(46,196,162,.045);outline:none;border-left:3px solid #49d9b2;padding-left:6px}
+.karaoke-section-head{font-size:.73rem;color:#8eb8ae;font-weight:600;margin:0 0 3px 6px}
+.karaoke-instrumental{background:rgba(58,117,131,.045);border-top:1px solid #28465a;padding-top:7px}
+.karaoke-instrumental .karaoke-timed-stage{height:63px}
+.karaoke-sung .karaoke-timed-stage{height:83px}
+.karaoke-time-chord{font-size:.82rem;padding:3px 7px;min-width:39px;background:#1b4141;border-color:#3b8478}
+.karaoke-time-word{top:53px;font-size:1.05rem;padding:3px 4px}
+.karaoke-time-word.sung{color:#a8bebf}
+.karaoke-time-word.singing{background:#168476;color:#fff;box-shadow:0 0 0 2px #16847630}
+.karaoke-instrumental .karaoke-section-scroll{scrollbar-width:none}
+.karaoke-no-voice{display:none}
+@media(max-width:600px){
+  .karaoke-lines{max-height:335px;padding:.48rem}
+  .karaoke-follow{padding:9px 10px;margin-bottom:8px}
+  .karaoke-follow-top{align-items:flex-start}
+  .karaoke-follow-block{gap:5px}
+  .karaoke-follow-caption{font-size:.55rem;flex-basis:100%}
+  .karaoke-follow-now{font-size:1.45rem}
+  .karaoke-follow-next{font-size:1rem}
+  .karaoke-follow-until{font-size:.62rem}
+  .karaoke-time-word{font-size:.98rem}
+}
+@media(prefers-reduced-motion:reduce){.karaoke-section,.karaoke-follow-fill{transition:none}}
+
+/* Versi senza nuovi accordi: nessuno spazio vuoto riservato ai marker. */
+.karaoke-no-local-chords .karaoke-timed-stage{height:43px}
+.karaoke-no-local-chords .karaoke-time-word{top:7px}
+
+
+/* v2.12 · Trasporto condiviso, sincronizzazione testo e ricerca online */
+.section-transport{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 16px}
+.section-transport button{min-width:96px;min-height:38px}
+.section-clock{font-variant-numeric:tabular-nums}
+.lyrics-offset-controls{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:12px 0;padding:12px;border:1px solid rgba(130,160,170,.24);border-radius:12px}
+.lyrics-offset-controls input[type=range]{flex:1;min-width:125px;accent-color:#38ba9a}
+.lyrics-offset-controls strong{font-variant-numeric:tabular-nums}
+.karaoke-online{border:1px solid rgba(130,160,170,.25);border-radius:12px;padding:12px;margin:12px 0}
+.karaoke-online summary{cursor:pointer;font-weight:650}
+.online-search-fields{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:12px 0}
+.online-search-fields label{flex:1 1 150px;display:flex;flex-direction:column;gap:5px}
+.online-search-fields input{width:100%;min-width:0;box-sizing:border-box;padding:9px 10px;border-radius:8px}
+.online-results{display:grid;gap:8px;margin:10px 0}
+.online-result{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:9px;border:1px solid rgba(130,160,170,.22);border-radius:9px}
+.online-result span{flex:1 1 180px}
+.online-result small{display:block;opacity:.75}
+.online-result button{min-height:36px}
+@media(max-width:530px){.online-search-fields{flex-direction:column;align-items:stretch}.online-search-fields label{width:100%}.lyrics-offset-controls{gap:8px}}
+
+
+/* v2.13 — Comandi trasporto completi e pannelli immersivi */
+.section-transport{
+  position:relative;display:flex;flex-direction:column;align-items:stretch;
+  gap:12px;margin:12px 0 20px;padding:14px 16px;
+  background:#0e1b2c;border:1px solid #3b6474;border-radius:14px;
+  box-shadow:0 8px 20px rgba(0,0,0,.14);
+}
+.section-transport-top,.section-transport-actions,.section-timeline{
+  display:flex;align-items:center;gap:10px;
+}
+.section-transport-top{justify-content:space-between;flex-wrap:wrap}
+.section-transport-actions{flex-wrap:wrap}
+.section-transport .section-play{
+  background:#80d6a0;color:#142b24;border:1px solid #9ae6b5;
+  font-size:14px;font-weight:800;min-width:114px;min-height:44px;
+}
+.section-transport .section-stop,.section-transport .section-fullscreen{
+  min-height:44px;min-width:86px;font-size:13px;font-weight:650;
+}
+.section-transport button:disabled{opacity:.45;cursor:not-allowed}
+.section-timeline{width:100%;gap:12px;min-width:0}
+.section-timeline output{flex:0 0 41px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;color:#cde3e3;font-size:13px;font-weight:700}
+.section-seek{
+  flex:1;min-width:80px;width:100%;height:26px;cursor:pointer;background:transparent;
+  appearance:none;-webkit-appearance:none;accent-color:#61e0b9;
+}
+.section-seek:disabled{cursor:not-allowed;opacity:.5}
+.section-seek::-webkit-slider-runnable-track{
+  height:9px;border-radius:20px;border:1px solid #3d5967;
+  background:linear-gradient(to right,#69dfb5 var(--seek-ratio,0%),#2b4254 var(--seek-ratio,0%));
+}
+.section-seek::-moz-range-track{height:9px;border-radius:20px;background:#2b4254;border:1px solid #3d5967}
+.section-seek::-moz-range-progress{height:9px;border-radius:20px;background:#69dfb5}
+.section-seek::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:-6px;
+  border-radius:50%;background:#d8fff0;border:3px solid #20896e;box-shadow:0 1px 6px #061315;
+}
+.section-seek::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#d8fff0;border:3px solid #20896e}
+.section-seek:focus-visible{outline:2px solid #a8ffe1;outline-offset:5px;border-radius:8px}
+html.gbl-expanded-active,body.gbl-expanded-active{overflow:hidden!important;overscroll-behavior:none}
+.panel.gbl-fullscreen{
+  box-sizing:border-box!important;position:fixed!important;inset:0!important;
+  z-index:10000!important;width:100vw!important;height:100vh!important;height:100dvh!important;
+  max-height:100dvh!important;margin:0!important;padding:clamp(14px,2.5vw,34px)!important;
+  background:#0f192b!important;border-radius:0!important;overflow:auto!important;overscroll-behavior:contain;
+}
+.panel.gbl-fullscreen:fullscreen{width:100vw!important;height:100vh!important;height:100dvh!important;overflow:auto!important;background:#0f192b!important;color:#edf3ff!important}
+.panel.gbl-fullscreen .section-transport{position:sticky;top:0;z-index:12;box-shadow:0 8px 22px #050c1d}
+.panel.gbl-fullscreen .karaoke-lines{
+  max-height:none!important;min-height:50vh!important;height:calc(100dvh - 260px)!important;
+  overflow-y:auto!important;font-size:clamp(1rem,1.7vw,1.35rem);
+}
+.panel.gbl-fullscreen .chord-list{max-height:none!important;min-height:33vh}
+.panel.gbl-fullscreen .chord-now strong{font-size:clamp(50px,8vw,94px)}
+.panel.gbl-fullscreen .chord-grid strong{font-size:clamp(38px,7vw,78px)}
+@media(max-width:550px){
+ .section-transport{padding:10px 11px;gap:8px}
+ .section-transport-top{gap:8px}
+ .section-transport .section-play{min-width:90px}
+ .section-transport .section-fullscreen{min-width:90px}
+ .section-transport-actions{gap:5px}
+ .section-transport .section-stop{min-width:68px}
+ .section-timeline{gap:7px}
+ .section-timeline output{flex-basis:37px;font-size:12px}
+ .panel.gbl-fullscreen{padding:max(12px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom))!important}
+ .panel.gbl-fullscreen .karaoke-lines{height:calc(100dvh - 230px)!important;min-height:45vh!important}
+}
+@media(prefers-reduced-motion:reduce){.panel.gbl-fullscreen *{scroll-behavior:auto!important}}
+
+/* Modalità studio: meno distrazioni quando si suona. I dati restano intatti. */
+.panel.gbl-fullscreen.karaoke-panel > :not(.panel-heading):not(h2):not(.section-transport):not(.karaoke-lines){display:none!important}
+.panel.gbl-fullscreen.chords-panel .capo-controls,
+.panel.gbl-fullscreen.chords-panel #chord-engine-source,
+.panel.gbl-fullscreen.chords-panel .chord-edit-controls,
+.panel.gbl-fullscreen.chords-panel .chord-edit-form,
+.panel.gbl-fullscreen.chords-panel .disclaimer,
+.panel.gbl-fullscreen.chords-panel > .hint{display:none!important}

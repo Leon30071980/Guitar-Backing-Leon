@@ -1,0 +1,11 @@
+{
+  "name":"Guitar Backing Leon",
+  "short_name":"Guitar Leon",
+  "description":"Libreria personale di basi senza chitarra con accordi sincronizzati",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "theme_color":"#111827",
+  "background_color":"#0e1422",
+  "icons":[{"src":"./icon-192.png","sizes":"192x192","type":"image/png"},{"src":"./icon-512.png","sizes":"512x512","type":"image/png"}]
+}
