@@ -1,5 +1,5 @@
 'use strict';
-// Google Drive REST API. Nessun token e' salvato su disco, cookie o localStorage.
+// Google Drive REST API. I token Google non vengono salvati su disco o nel browser.
 const $ = id => document.getElementById(id);
 // Sezioni 03 e 04 collegate all'unico player, senza tracce duplicate.
 const sectionTransport=window.GuitarTransport.attach({
@@ -36,6 +36,7 @@ capoSelect.addEventListener('change', () => {
 });
 const fmt = v => { const n = Math.max(0,Number(v)||0); return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`; };
 let token = '', tokenClient, tree, songs = [], current = null, sourceUrl = '', loopA = null, loopB = null, refreshing = false;
+let forceConsentNext=false;
 let guitarEnabled = false, vocalsEnabled = true, mixerSeq = 0;
 let karaokeWords=[];
 function updateLyricsOffset(value){
@@ -74,55 +75,77 @@ const karaokeView=window.GuitarKaraoke.make({
   onSeek: seconds=>{$('player').currentTime=seconds;$('player').play().catch(()=>{});},
 });
 const cachedAudio = new Map();
+const continuousMixer=window.GuitarContinuousMixer.attach($('player'),msg=>notice(msg,true));
+
 function requestedMix(){ return guitarEnabled ? (vocalsEnabled ? 'full' : 'no_vocals') : (vocalsEnabled ? 'no_guitar' : 'no_guitar_no_vocals'); }
 function availableMixes(){return current?.tracks || {};}
 function updateMixer(){
-  const hasAll=Object.keys(availableMixes()).length>=4;
+  const capable=Object.keys(availableMixes()).length>=4;
+  const ok=capable && continuousMixer.ready;
   const g=$('toggle-guitar'),v=$('toggle-vocals');
-  g.disabled=v.disabled=!hasAll;
+  g.disabled=v.disabled=!ok;
   g.classList.toggle('on',guitarEnabled);v.classList.toggle('on',vocalsEnabled);
   g.setAttribute('aria-pressed',String(guitarEnabled));v.setAttribute('aria-pressed',String(vocalsEnabled));
   g.textContent=`🎸 Chitarre: ${guitarEnabled?'ON':'OFF'}`;
   v.textContent=`🎤 Voce: ${vocalsEnabled?'ON':'OFF'}`;
-  $('mixer-note').textContent=hasAll
-    ? 'Le tracce selezionate vengono scaricate da Google Drive. Il cambio può provocare una breve pausa.'
-    : 'Mixer non disponibile per questo brano: deve essere rielaborato dal file originale sul PC con una nuova elaborazione.';
+  $('mixer-note').textContent=ok
+    ? 'Mixer continuo pronto: ON/OFF immediati senza fermare il brano.'
+    : capable ? 'Preparazione delle combinazioni da Google Drive. Si può ascoltare durante il caricamento.'
+    : 'Mixer non disponibile per questo brano: deve essere rielaborato sul PC.';
 }
 function clearAudioCache(){
+  continuousMixer.reset();
   for(const u of cachedAudio.values())URL.revokeObjectURL(u);
-  cachedAudio.clear();
-  sourceUrl='';
+  cachedAudio.clear(); sourceUrl='';
 }
-async function switchMix(){
+function updateDownload(mode){
+  const id=availableMixes()[mode] || (mode==='no_guitar'?current?.audioFileId:null);
+  const url=cachedAudio.get(id);
+  $('download').href=url||'#';
+  $('download').download=(current?.name||'base').replace(/[\\/:*?"<>|]/g,'-').slice(0,70)+' - '+mode+'.mp3';
+}
+async function prepareMixer(song,serial){
+  const mixes=availableMixes();
+  if(Object.keys(mixes).length<4)return;
+  const urls={};
+  try {
+    const downloads=await Promise.all(Object.entries(mixes).map(async ([mode,id])=>{
+      let url=cachedAudio.get(id);
+      if(!url){
+        const blob=await bytes(id);
+        if(serial!==mixerSeq || current!==song)return null;
+        url=URL.createObjectURL(blob);cachedAudio.set(id,url);
+      }
+      return [mode,url];
+    }));
+    if(serial!==mixerSeq || current!==song)return;
+    for(const pair of downloads){if(pair)urls[pair[0]]=pair[1];}
+    await continuousMixer.prepare(urls);
+    if(serial===mixerSeq && current===song){updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
+  }catch(err){if(serial===mixerSeq)notice('Mixer non pronto: '+err.message,true);}
+}
+async function switchMix(initial=false){
   if(!current)return;
-  const chosen=current;
-  const mode=requestedMix();
-  const id=availableMixes()[mode] || (mode==='no_guitar' ? chosen.audioFileId : null);
-  if(!id){notice('Traccia non disponibile: rielabori questa canzone.',true);return;}
-  const serial=++mixerSeq;
+  if(!initial){
+    if(continuousMixer.select(requestedMix())){updateDownload(requestedMix());updateMixer();}
+    return;
+  }
+  const song=current, serial=++mixerSeq;
+  const id=availableMixes().no_guitar || song.audioFileId;
+  if(!id){notice('La base audio non è disponibile.',true);return;}
   const player=$('player');
-  const pos=player.currentTime||0, rate=player.playbackRate||1;
-  const wasPlaying=!player.paused && !player.ended;
   player.pause();
-  updateMixer();
-  notice('Preparazione della combinazione selezionata...');
-  try{
+  try {
     let url=cachedAudio.get(id);
-    if(!url){const blob=await bytes(id);url=URL.createObjectURL(blob);cachedAudio.set(id,url);}
-    if(serial!==mixerSeq || current!==chosen)return;
+    if(!url){const blob=await bytes(id);if(serial!==mixerSeq || current!==song)return;url=URL.createObjectURL(blob);cachedAudio.set(id,url);}
+    if(serial!==mixerSeq || current!==song)return;
     sourceUrl=url;
-    player.onloadedmetadata=()=>{
-      player.onloadedmetadata=null;
-      player.currentTime=Math.min(pos,Math.max(0,(player.duration||pos+1)-0.1));
-      player.playbackRate=rate;
-      syncChords();
-      if(wasPlaying)player.play().catch(()=>notice('Premere Play per riprendere l’ascolto.'));
-    };
-    player.src=url;player.load();
-    $('download').href=url;
-    $('download').download=(current.name||'base').replace(/[\/:*?"<>|]/g,'-').slice(0,70)+' - '+mode+'.mp3';
-    notice('Combinazione pronta.');
-  }catch(err){notice(err.message,true);}
+    player.src=url;
+    player.load();
+    updateDownload('no_guitar');
+    notice('Base pronta. Preparazione mixer in corso...');
+    prepareMixer(song,serial);
+  }catch(err){if(serial===mixerSeq)notice(err.message,true);}
 }
 $('toggle-guitar').addEventListener('click',()=>{guitarEnabled=!guitarEnabled;switchMix();});
 $('toggle-vocals').addEventListener('click',()=>{vocalsEnabled=!vocalsEnabled;switchMix();});
@@ -134,7 +157,7 @@ async function api(url,options={}) {
   const response = await fetch(url,{...options,headers:{Authorization:`Bearer ${token}`,...options.headers}});
   if (!response.ok) {
     let details=''; try {const data=await response.json(); details=data.error?.message||'';}catch{}
-    if (response.status===401) token='';
+    if (response.status===401){token='';$('google-btn').textContent='Ricollega Google';throw new Error('La sessione Google è scaduta. Toccare Ricollega Google per rinnovare l’accesso.');}
     throw new Error(`Google Drive HTTP ${response.status}: ${details||response.statusText}`);
   }
   return response;
@@ -183,14 +206,14 @@ async function initGoogle() {
   const clientId=window.GUITAR_CONFIG?.clientId||'';
   if(!clientId.endsWith('.apps.googleusercontent.com')||clientId.startsWith('INSERIRE_'))throw new Error('Configurare prima il Client ID web nel file config.js.');
   tokenClient=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:SCOPE,callback:async res=>{
-    if(res.error){notice('Autorizzazione Google negata: '+res.error,true);return;}
-    token=res.access_token;
+    if(res.error){forceConsentNext=true;notice('Google richiede una nuova autorizzazione. Toccare nuovamente Accedi con Google. ('+res.error+')',true);return;}
+    token=res.access_token; $('google-btn').textContent='Google collegato';
     try {tree=await ensureTree();$('dashboard').hidden=false;notice('Collegato al Suo Google Drive privato.');await refreshAll();}
     catch(err){notice(err.message,true);}
   }});
 }
 $('google-btn').addEventListener('click',async()=>{
-  try {if(!tokenClient)await initGoogle();tokenClient.requestAccessToken({prompt:token?'':'consent'});}
+  try {if(!tokenClient)await initGoogle();tokenClient.requestAccessToken({prompt:forceConsentNext?'consent':''});forceConsentNext=false;}
   catch(err){notice(err.message,true);}
 });
 
@@ -240,7 +263,7 @@ async function openSong(song){
   loadKaraoke(song);
   $('player').playbackRate=Number($('speed').value);
   updateMixer();
-  await switchMix();
+  await switchMix(true);
   $('karaoke-panel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function loadKaraoke(song){
