@@ -35,7 +35,7 @@ capoSelect.addEventListener('change', () => {
   updateCapo();
 });
 const fmt = v => { const n = Math.max(0,Number(v)||0); return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`; };
-let token = '', tokenClient, tree, songs = [], current = null, sourceUrl = '', loopA = null, loopB = null, refreshing = false;
+let token = '', tokenClient, tree, songs = [], current = null, sourceUrl = '', refreshing = false;
 let forceConsentNext=false;
 let guitarEnabled = false, vocalsEnabled = true, mixerSeq = 0;
 let karaokeWords=[];
@@ -86,8 +86,10 @@ function updateMixer(){
   g.disabled=v.disabled=!ok;
   g.classList.toggle('on',guitarEnabled);v.classList.toggle('on',vocalsEnabled);
   g.setAttribute('aria-pressed',String(guitarEnabled));v.setAttribute('aria-pressed',String(vocalsEnabled));
-  g.textContent=`🎸 Chitarre: ${guitarEnabled?'ON':'OFF'}`;
-  v.textContent=`🎤 Voce: ${vocalsEnabled?'ON':'OFF'}`;
+  g.querySelector('.stem-state').textContent=guitarEnabled?'ON':'OFF';
+  g.setAttribute('aria-label',guitarEnabled?'Chitarre attive':'Chitarre disattivate');
+  v.querySelector('.stem-state').textContent=vocalsEnabled?'ON':'OFF';
+  v.setAttribute('aria-label',vocalsEnabled?'Voce attiva':'Voce disattivata');
   $('mixer-note').textContent=ok
     ? 'Mixer continuo pronto: ON/OFF immediati senza fermare il brano.'
     : capable ? 'Preparazione delle combinazioni da Google Drive. Si può ascoltare durante il caricamento.'
@@ -254,14 +256,14 @@ async function openSong(song){
     ? 'Analisi dalla chitarra isolata; accordi indicativi.'
     : song.chord_source === 'corretto-manualmente' ? 'Accordi con correzioni manuali.'
     : 'Accordi da un’analisi precedente: per migliorarli utilizzi la rianalisi sul PC.';
-  loopA=loopB=null;loopMessage();renderChords(song.chords||[]);
+  renderChords(song.chords||[]);
   $('karaoke-panel').hidden=false;
   karaokeWords=[];
   updateLyricsOffset(0);
   $('sync-audio-check').hidden=true;
   karaokeView.render([], song.chords||[],Number(song.duration)||0);
   loadKaraoke(song);
-  $('player').playbackRate=Number($('speed').value);
+  $('player').playbackRate=1;
   updateMixer();
   await switchMix(true);
 
@@ -290,14 +292,12 @@ function syncChords(){
   if(!current)return;
   const p=$('player'),t=p.currentTime||0;
   karaokeView.tick(t);
-  if(loopA!==null&&loopB!==null&&loopB>loopA&&t>=loopB){p.currentTime=loopA;return;}
   const chords=current.chords||[];
   const idx=chords.findIndex(c=>t>=c.start&&t<c.end);
   $('chord-now').textContent=idx<0?'—':shownChord(chords[idx].chord);
   $('chord-next').textContent=shownChord(chords.slice(idx+1).find(c=>c.chord!=='N')?.chord);
   [...$('chords').children].forEach((e,i)=>e.classList.toggle('selected',i===idx));
 }
-function loopMessage(){$('loop-info').textContent=loopA===null?'Selezioni A e B per ripetere una sezione.':`A: ${fmt(loopA)} · B: ${loopB===null?'da impostare':fmt(loopB)}`;}
 $('player').addEventListener('timeupdate',syncChords);$('player').addEventListener('seeked',syncChords);
 // Aggiornamento temporale piu' preciso dei soli eventi HTML5 timeupdate.
 let chordFrame=0,lastChordFrame=0;
@@ -309,10 +309,6 @@ function followAudioClock(now){
 }
 $('player').addEventListener('play',()=>{if(!chordFrame)chordFrame=requestAnimationFrame(followAudioClock);});
 $('player').addEventListener('pause',()=>{if(chordFrame)cancelAnimationFrame(chordFrame);chordFrame=0;syncChords();});
-$('speed').addEventListener('change',()=>{$('player').playbackRate=Number($('speed').value);});
-$('set-a').addEventListener('click',()=>{loopA=$('player').currentTime||0;loopB=null;loopMessage();});
-$('set-b').addEventListener('click',()=>{if(loopA===null||$('player').currentTime<=loopA){notice('Imposti prima A, poi B in un punto successivo.',true);return;}loopB=$('player').currentTime;loopMessage();});
-$('clear-loop').addEventListener('click',()=>{loopA=loopB=null;loopMessage();});
 $('upload-form').addEventListener('submit',async ev=>{ev.preventDefault();
   const f=$('upload-file').files[0];if(!f)return;
   if(f.size>40*1024*1024){notice('Da smartphone il limite prudenziale è 40 MB. Carichi i file più grandi dal PC.',true);return;}

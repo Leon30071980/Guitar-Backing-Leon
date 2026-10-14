@@ -10,14 +10,14 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.18.0" rel="stylesheet"/>
+<link href="./style.css?v=2.19.0" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.18.0"></script>
-<script defer="" src="./karaoke.js?v=2.18.0"></script>
-<script defer="" src="./transport_ui.js?v=2.18.0"></script>
-<script defer="" src="./continuous_mixer.js?v=2.18.0"></script>
-<script defer="" src="./app.js?v=2.18.0"></script>
+<script defer="" src="./chord_tools.js?v=2.19.0"></script>
+<script defer="" src="./karaoke.js?v=2.19.0"></script>
+<script defer="" src="./transport_ui.js?v=2.19.0"></script>
+<script defer="" src="./continuous_mixer.js?v=2.19.0"></script>
+<script defer="" src="./app.js?v=2.19.0"></script>
 </head>
 <body>
 <main class="shell">
@@ -40,6 +40,10 @@
 <button aria-label="Riproduci il brano" class="secondary section-play" type="button">▶ Play</button>
 <button aria-label="Interrompi il brano" class="ghost section-stop" type="button">■ Stop</button>
 </div>
+<div class="stem-buttons" aria-label="Mixer voce e chitarre" role="group">
+<button aria-pressed="false" aria-label="Chitarre disattivate" class="stem-toggle" id="toggle-guitar" type="button">🎸 <span class="stem-name">Chitarre</span><span class="stem-state">OFF</span></button>
+<button aria-pressed="true" aria-label="Voce attiva" class="stem-toggle on" id="toggle-vocals" type="button">🎤 <span class="stem-name">Voce</span><span class="stem-state">ON</span></button>
+</div>
 </div>
 <div class="section-timeline">
 <output aria-live="off" class="section-clock">0:00</output>
@@ -47,28 +51,8 @@
 <output class="section-duration">0:00</output>
 </div>
 </div></div><audio id="player" playsinline="" preload="metadata"></audio>
-<div class="stem-mixer" id="stem-mixer">
-<div class="stem-mixer-head"><strong>🎚️ Mixer strumenti</strong><small>Attivi o disattivi le tracce durante l’ascolto</small></div>
-<div class="stem-buttons">
-<button aria-pressed="false" class="stem-toggle" id="toggle-guitar" type="button">🎸 Chitarre: OFF</button>
-<button aria-pressed="true" class="stem-toggle on" id="toggle-vocals" type="button">🎤 Voce: ON</button>
-</div>
-<div aria-label="Separazione chitarre non ancora disponibile" class="experimental-guitars">
-<span>Ritmica / Solista (richiede secondo modello AI):</span>
-<button disabled="" title="Occorre un modello specializzato, non ancora verificato" type="button">Ritmica</button>
-<button disabled="" title="Occorre un modello specializzato, non ancora verificato" type="button">Solista</button>
-</div>
-<p class="mixer-note" id="mixer-note">Le modifiche agiscono sull’audio, non sugli accordi.</p>
-</div>
-<div class="controls">
-<label for="speed">Velocità</label>
-<select id="speed"><option value="0.75">0,75×</option><option value="0.9">0,90×</option><option selected="" value="1">1,00×</option><option value="1.1">1,10×</option><option value="1.25">1,25×</option></select>
-<button class="secondary" id="set-a" type="button">A</button>
-<button class="secondary" id="set-b" type="button">B</button>
-<button class="secondary" id="clear-loop" type="button">Azzera loop</button>
-<a download="base.mp3" href="#" id="download">↓ MP3</a>
-</div>
-<div class="muted" id="loop-info">Selezioni A e B per ripetere una sezione.</div>
+<p class="mixer-note" id="mixer-note" role="status">Preparazione mixer...</p>
+<div class="controls"><a download="base.mp3" href="#" id="download">↓ MP3</a></div>
 </section>
 <section class="panel chords-panel" hidden="" id="chords-panel">
 <div class="panel-heading"><h2>03 · Accordi sincronizzati</h2><button aria-expanded="false" aria-label="Espandi accordi a tutto schermo" class="secondary section-fullscreen" data-target="chords-panel" type="button">⛶ Espandi</button></div>
@@ -119,7 +103,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </section>
 </section>
-<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.18.0</span></footer>
+<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.19.0</span></footer>
 </main>
 </body>
 </html>

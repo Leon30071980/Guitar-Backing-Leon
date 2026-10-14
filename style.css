@@ -310,3 +310,39 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
   body.gbl-transport-docked .transport-home{min-height:108px}
   .stem-toggle{flex:1 1 140px;min-width:0;min-height:46px;font-size:14px}
 }
+
+
+/* 2.19.0 — Mixer integrato nella barra di trasporto condivisa.
+   Il pannello mixer separato e i comandi velocita/loop non esistono piu. */
+#global-transport{gap:9px}
+#global-transport .section-transport-top{display:flex;align-items:center;gap:12px;min-width:0}
+#global-transport .stem-buttons{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;min-width:0}
+#global-transport .stem-toggle{
+  min-height:44px;min-width:0;padding:9px 11px;font-size:13px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  border-radius:10px;white-space:nowrap;flex:0 0 auto;touch-action:manipulation;
+}
+#global-transport .stem-toggle .stem-state{font-weight:900;letter-spacing:.02em}
+#global-transport .stem-toggle:not(.on){background:#27384b;border-color:#536d82;color:#e8eef7}
+#global-transport .stem-toggle.on{background:#116554;border-color:#48d1af;color:#fff}
+#global-transport .stem-toggle:disabled{opacity:.48;cursor:not-allowed}
+#global-transport .section-timeline{min-width:170px}
+/* L'avviso sullo stato e il download restano nel contenitore del brano, non nella barra fissa. */
+#player-panel>.mixer-note{margin:7px 0 4px;font-size:12px;color:#aec7cf}
+@media(max-width:760px){
+ #global-transport{flex-direction:column;align-items:stretch;gap:7px}
+ #global-transport .section-transport-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%}
+ #global-transport .section-transport-actions{display:flex;gap:6px;min-width:0;width:100%}
+ #global-transport .stem-buttons{gap:6px;min-width:0;width:100%;justify-content:flex-end}
+ #global-transport .section-play,#global-transport .section-stop{flex:1 1 0;min-width:0;padding:7px 6px;font-size:12px;min-height:44px}
+ #global-transport .stem-toggle{flex:1 1 0;padding:8px 5px;font-size:12px;min-height:44px}
+ #global-transport .stem-name{display:none}
+ #global-transport .section-timeline{flex:auto;min-width:0;width:100%;gap:8px}
+ body.gbl-transport-docked .transport-home{min-height:111px}
+}
+@media(max-width:355px){
+ #global-transport{padding:7px 8px}
+ #global-transport .section-transport-top{gap:4px}
+ #global-transport .section-transport-actions,#global-transport .stem-buttons{gap:4px}
+ #global-transport .stem-toggle{font-size:11px;padding:7px 3px}
+}
