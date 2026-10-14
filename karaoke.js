@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.14 — lettura continua da chitarrista.
+/* Guitar Backing Leon 2.16.2 — lettura continua da chitarrista.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -64,6 +64,32 @@
     addGap(cursor,length,phrases.length?'end':'start');
     return {segments,chords,words,duration:length};
   }
+  // Anticipo SOLO del focus visivo: i timestamp di accordi e parole restano identici.
+  const FOCUS_PREVIEW_SECONDS = 0.35;
+  const MAX_EARLY_CHORD_SECONDS = 4;
+
+  function focusStartForSegment(segment, previous, chords) {
+    if (segment.type !== 'words') return segment.start;
+    let focus = Math.max(0, segment.start - FOCUS_PREVIEW_SECONDS);
+
+    // Un accordo iniziato nella pausa dopo il verso precedente può introdurre
+    // il verso nuovo. Lo associamo solo se è ancora attivo alla prima parola,
+    // evitando di prendere accordi di strofe precedenti o di lunghi interludi.
+    if (previous?.type === 'words') {
+      const idx = chordAt(chords, segment.start);
+      const entry = idx >= 0 ? chords[idx] : null;
+      if (entry && entry.chord !== 'N' &&
+          entry.start >= previous.end - 0.0001 &&
+          entry.start < segment.start - 0.0001 &&
+          segment.start - entry.start <= MAX_EARLY_CHORD_SECONDS) {
+        focus = Math.min(focus, Math.max(0, entry.start - FOCUS_PREVIEW_SECONDS));
+      }
+      // Non passare al verso nuovo prima che finisca il testo ancora cantato.
+      focus = Math.max(focus, previous.end);
+    }
+    return focus;
+  }
+
   function make({root,formatChord=(s=>s),onSeek,onWordClick,isEditing=()=>false}) {
     let model={segments:[],words:[],chords:[],duration:0};
     let lyricsOffset=0, originalWords=[], originalChords=[], originalDuration=0;
@@ -190,7 +216,8 @@
           });
         }
         scroll.append(stage);section.append(scroll);root.append(section);
-        rows.push({section,scroll,segment,map,chordMarkers});
+        const focusStart = focusStartForSegment(segment,prevSegment,model.chords);
+        rows.push({section,scroll,segment,map,chordMarkers,focusStart});
       });
     }
     function tick(time,autoScroll=true){
@@ -220,11 +247,12 @@
         const progress=chord?100*clamp((t-chord.start)/Math.max(.001,chord.end-chord.start),0,1):0;
         fillEl.style.width=`${progress.toFixed(1)}%`;
       }
-      // Se non si canta per pochi secondi, lasciare evidenziato il verso precedente.
-      // Gli accordi cambiano COMUNQUE al timestamp esatto tramite la barra sopra.
+      // Anticipa SOLO il focus del verso (primo accordo nella pausa o prima
+      // parola); l'evidenziazione delle singole parole resta sul tempo reale.
+      // Gli accordi cambiano SEMPRE al proprio timestamp musicale.
       let rowIndex=-1;
       for(let i=0;i<rows.length;i++){
-        if(rows[i].segment.start<=t+.0001)rowIndex=i;
+        if(rows[i].focusStart<=t+.0001)rowIndex=i;
         else break;
       }
       if(rowIndex<0 && rows.length)rowIndex=0;
