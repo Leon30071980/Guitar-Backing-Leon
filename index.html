@@ -9,13 +9,13 @@
   <title>Guitar Backing Leon · La tua libreria</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=2.13">
+  <link rel="stylesheet" href="./style.css?v=2.16">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="./config.js" defer></script>
-  <script src="./chord_tools.js?v=2.13" defer></script>
-  <script src="./karaoke.js?v=2.13" defer></script>
-  <script src="./transport_ui.js?v=2.13" defer></script>
-  <script src="./app.js?v=2.13" defer></script>
+  <script src="./chord_tools.js?v=2.16" defer></script>
+  <script src="./karaoke.js?v=2.16" defer></script>
+  <script src="./transport_ui.js?v=2.16" defer></script>
+  <script src="./app.js?v=2.16" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -110,6 +110,7 @@
             </div>
           </div>
         <div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input type="range" id="lyrics-offset" min="-5" max="5" step="0.1" value="0"><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div>
+        <p class="hint" id="sync-audio-check" role="status" hidden></p>
         <p class="hint" id="karaoke-status">Caricamento testo...</p>
         <div class="karaoke-lines" id="karaoke-lines"></div>
         <p class="hint">Gli accordi seguono la musica anche nelle introduzioni e negli assoli. Le pause brevi non creano righe separate. Per correggere parole e tempi utilizzi l'app Windows.</p>

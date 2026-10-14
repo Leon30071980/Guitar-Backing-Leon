@@ -58,6 +58,16 @@ $('lyrics-offset-reset').addEventListener('click',()=>{
   if(current){try{localStorage.removeItem('gbl-lyrics-offset-'+current.id);}catch{}}
 });
 
+function checkAudioDuration(){
+  const expected=Number(current?.duration)||0;
+  const actual=Number($('player').duration)||0;
+  const elem=$('sync-audio-check');
+  const mismatch=expected>1 && Number.isFinite(actual) && actual>1 && Math.abs(actual-expected)>.75;
+  elem.hidden=!mismatch;
+  if(mismatch)elem.textContent=`Attenzione: durata dell'audio ${actual.toFixed(1)} s, durata prevista ${expected.toFixed(1)} s (differenza ${(actual-expected).toFixed(1)} s). Potrebbe essere una traccia non perfettamente allineata.`;
+}
+$('player').addEventListener('loadedmetadata',checkAudioDuration);
+$('player').addEventListener('durationchange',checkAudioDuration);
 const karaokeView=window.GuitarKaraoke.make({
   root:$('karaoke-lines'),
   formatChord: value=>shownChord(value),
@@ -225,6 +235,7 @@ async function openSong(song){
   $('karaoke-panel').hidden=false;
   karaokeWords=[];
   updateLyricsOffset(0);
+  $('sync-audio-check').hidden=true;
   karaokeView.render([], song.chords||[],Number(song.duration)||0);
   loadKaraoke(song);
   $('player').playbackRate=Number($('speed').value);

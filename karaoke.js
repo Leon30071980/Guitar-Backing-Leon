@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.11 — lettura continua da chitarrista.
+/* Guitar Backing Leon 2.14 — lettura continua da chitarrista.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -36,7 +36,7 @@
     const phrases=[];
     for(const w of words){
       const tail=phrases[phrases.length-1];
-      if(!tail || tail.line!==w.line || w.start-tail.end>1.6){
+      if(!tail || tail.line!==w.line){
         phrases.push({type:'words',line:w.line,start:w.start,end:w.end,words:[w]});
       }else{tail.words.push(w);tail.end=Math.max(tail.end,w.end);}
     }
@@ -97,10 +97,13 @@
     function render(words,chords=[],duration=0){
       originalWords=words||[];originalChords=chords||[];originalDuration=duration;
       root.replaceChildren();
-      // Offset positivo = parole leggermente più tardi; gli accordi NON si spostano.
-      const visualWords=(Array.isArray(words)?words:[]).map(w=>({...w,
-        start:Math.max(0,Number(w.start)+lyricsOffset),
-        end:Math.max(.01,Number(w.end)+lyricsOffset)}));
+      // Offset fisso facoltativo; niente correzioni progressive durante l'ascolto.
+      // Le parole e gli accordi seguono entrambi audio.currentTime.
+      const correctedTime=t=>Math.max(0,Number(t)+lyricsOffset);
+      const visualWords=(Array.isArray(words)?words:[]).map(w=>{
+        const start=correctedTime(w.start),end=correctedTime(w.end);
+        return {...w,start,end:Math.max(start+.015,end)};
+      });
       model=buildSegments(visualWords,chords,duration);
       rows=[];wordEls=[];currentRow=-1;currentChord=-2;lastHorizontalTime=-1;
       const follow=makeEl('div','karaoke-follow');
@@ -123,7 +126,11 @@
       }
       model.segments.forEach((segment,index)=>{
         const instrumental=segment.type==='instrumental';
-        const section=makeEl('section','karaoke-section '+(instrumental?'karaoke-instrumental':'karaoke-sung'));
+        const prevSegment=model.segments[index-1];
+        const stanzaBreak=!instrumental && prevSegment && prevSegment.type==='words' &&
+          segment.line-prevSegment.line>1;
+        const section=makeEl('section','karaoke-section '+(instrumental?'karaoke-instrumental':'karaoke-sung')+
+          (stanzaBreak?' karaoke-stanza-start':''));
         if(instrumental){
           const header=makeEl('div','karaoke-section-head',`♪ ${segment.label} · ${stamp(segment.start)}–${stamp(segment.end)}`);
           section.append(header);

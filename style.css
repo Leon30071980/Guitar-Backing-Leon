@@ -204,3 +204,30 @@ html.gbl-expanded-active,body.gbl-expanded-active{overflow:hidden!important;over
 .panel.gbl-fullscreen.chords-panel .chord-edit-form,
 .panel.gbl-fullscreen.chords-panel .disclaimer,
 .panel.gbl-fullscreen.chords-panel > .hint{display:none!important}
+
+/* v2.14: correzione deriva del testo (nessun effetto sull'audio/accordi) */
+#sync-audio-check:not([hidden]){padding:8px 10px;border-left:3px solid #f7bb69;background:#382b20;border-radius:6px}
+
+/* 2.15: a capo solo ai confini dei versi originali, non ogni 9 parole. */
+.karaoke-stanza-start{margin-top:1rem}
+.karaoke-time-word{white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+.karaoke-section-scroll{min-width:0}
+
+
+/* v2.16 — larghezza controllata anche su smartphone. */
+*,*::before,*::after{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+.shell{width:calc(100% - 36px);max-width:910px;margin-inline:auto;padding:19px 0 42px}
+.panel,.section-transport,.karaoke-lines,.karaoke-panel{min-width:0;max-width:100%}
+.panel{padding:18px;border-radius:14px}
+header{flex-wrap:wrap;gap:12px}
+.karaoke-lines{max-height:460px}
+.section-transport-top{gap:8px;flex-wrap:wrap}
+@media(max-width:600px){
+ .shell{width:calc(100% - 22px);padding-top:13px}
+ .panel{padding:13px}
+ .section-timeline{gap:8px}
+ .section-transport-top{align-items:stretch}
+ .section-transport-actions{flex-wrap:wrap}
+}
+.panel.gbl-fullscreen,.panel:fullscreen{max-width:none!important}
