@@ -1,12 +1,16 @@
 "use strict";
-/* Guitar Backing Leon 2.16.1: player unico, timeline sincronizzate, espansione fullscreen.
+/* Guitar Backing Leon 2.18.0: player unico, timeline sincronizzate, espansione fullscreen.
  * Non viene creato alcun secondo elemento audio; anche su iOS la vista estesa
  * si limita a riposizionare i pannelli, senza interrompere la riproduzione. */
 (function(){
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   const fmt=(n)=>{const t=Math.floor(Math.max(0,Number(n)||0));return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};
   function attach({audio,getDuration=()=>0,onSeek=()=>{}}){
-    const transports=[...document.querySelectorAll('.section-transport')];
+    // Un solo trasporto condiviso. La barra viene spostata, non duplicata.
+    const toolbar=document.getElementById('global-transport');
+    const transportHome=document.getElementById('transport-home');
+    if(!toolbar||!transportHome)throw Error('Barra riproduzione unificata mancante');
+    const transports=[toolbar];
     const buttons=[...document.querySelectorAll('.section-fullscreen')];
     // The expand control lives beside the panel title, not inside the crowded player toolbar.
     function refreshExpandedHeader(){
@@ -71,6 +75,8 @@
       const panel=expanded;
       expanded=null;native=false;
       panel.classList.remove('gbl-fullscreen','gbl-fullscreen-fallback');
+      toolbar.classList.remove('gbl-expanded-transport');
+      transportHome.appendChild(toolbar);
       panel.style.removeProperty('--gbl-expand-head-h');
       document.documentElement.classList.remove('gbl-expanded-active');
       document.body.classList.remove('gbl-expanded-active');
@@ -93,6 +99,11 @@
       if(expanded)await closeExpanded();
       savedScroll=window.scrollY;savedFocus=document.activeElement;
       expanded=panel;
+      // La stessa barra deve restare disponibile anche nel fullscreen nativo.
+      const heading=panel.querySelector('.panel-heading');
+      if(heading)heading.insertAdjacentElement('afterend',toolbar);
+      else panel.prepend(toolbar);
+      toolbar.classList.add('gbl-expanded-transport');
       panel.classList.add('gbl-fullscreen');
       document.documentElement.classList.add('gbl-expanded-active');
       document.body.classList.add('gbl-expanded-active');
@@ -133,6 +144,9 @@
     ['play','pause','ended','loadstart','loadedmetadata','durationchange','timeupdate','seeked','emptied','ratechange'].forEach(event=>{
       audio.addEventListener(event,()=>{
         update();
+        if(event==='play'){
+          document.body.classList.add('gbl-transport-docked');
+        }
         if(event==='play'&&!frame)frame=requestAnimationFrame(frameUpdate);
         if(['pause','ended'].includes(event)&&frame){cancelAnimationFrame(frame);frame=0;}
       });

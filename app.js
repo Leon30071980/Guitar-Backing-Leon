@@ -264,7 +264,7 @@ async function openSong(song){
   $('player').playbackRate=Number($('speed').value);
   updateMixer();
   await switchMix(true);
-  $('karaoke-panel').scrollIntoView({behavior:'smooth',block:'start'});
+
 }
 async function loadKaraoke(song){
   if(!song?.lyricsFileId){
