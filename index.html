@@ -9,12 +9,12 @@
   <title>Guitar Backing Leon · La tua libreria</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=2.16">
+  <link rel="stylesheet" href="./style.css?v=2.16.1">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="./config.js" defer></script>
   <script src="./chord_tools.js?v=2.16" defer></script>
   <script src="./karaoke.js?v=2.16" defer></script>
-  <script src="./transport_ui.js?v=2.16" defer></script>
+  <script src="./transport_ui.js?v=2.16.1" defer></script>
   <script src="./app.js?v=2.16" defer></script>
 </head>
 <body>
@@ -57,14 +57,13 @@
         <div id="loop-info" class="muted">Selezioni A e B per ripetere una sezione.</div>
       </section>
       <section class="panel chords-panel" id="chords-panel" hidden>
-        <h2>03 · Accordi sincronizzati</h2>
+        <div class="panel-heading"><h2>03 · Accordi sincronizzati</h2><button type="button" class="secondary section-fullscreen" data-target="chords-panel" aria-expanded="false" aria-label="Espandi accordi a tutto schermo">⛶ Espandi</button></div>
         <div class="section-transport" role="group" aria-label="Controlli riproduzione accordi">
             <div class="section-transport-top">
               <div class="section-transport-actions">
                 <button type="button" class="secondary section-play" aria-label="Riproduci accordi">▶ Play</button>
                 <button type="button" class="ghost section-stop" aria-label="Interrompi il brano">■ Stop</button>
               </div>
-              <button type="button" class="secondary section-fullscreen" data-target="chords-panel" aria-expanded="false" aria-label="Espandi accordi a tutto schermo">⛶ Tutto schermo</button>
             </div>
             <div class="section-timeline">
               <output class="section-clock" aria-live="off">0:00</output>
@@ -93,15 +92,14 @@
         <div id="chords" class="chords"></div>
         <p class="hint">Accordi stimati automaticamente: verificarli a orecchio. Il simbolo — significa accordo non identificato. Il capotasto modifica solo le posizioni mostrate, non l’audio.</p>
       </section>
-      <section class="panel" id="karaoke-panel" hidden>
-        <h2>04 · Testo karaoke + accordi</h2>
+      <section class="panel karaoke-panel" id="karaoke-panel" hidden>
+        <div class="panel-heading"><h2>04 · Testo karaoke + accordi</h2><button type="button" class="secondary section-fullscreen" data-target="karaoke-panel" aria-expanded="false" aria-label="Espandi karaoke a tutto schermo">⛶ Espandi</button></div>
         <div class="section-transport" role="group" aria-label="Controlli riproduzione karaoke">
             <div class="section-transport-top">
               <div class="section-transport-actions">
                 <button type="button" class="secondary section-play" aria-label="Riproduci karaoke">▶ Play</button>
                 <button type="button" class="ghost section-stop" aria-label="Interrompi il brano">■ Stop</button>
               </div>
-              <button type="button" class="secondary section-fullscreen" data-target="karaoke-panel" aria-expanded="false" aria-label="Espandi karaoke a tutto schermo">⛶ Tutto schermo</button>
             </div>
             <div class="section-timeline">
               <output class="section-clock" aria-live="off">0:00</output>
@@ -131,7 +129,7 @@
         <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
       </section>
     </section>
-    <footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno</footer>
+    <footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.16.1</span></footer>
   </main>
 </body>
 </html>

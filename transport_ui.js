@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.13: player unico, timeline sincronizzate, espansione fullscreen.
+/* Guitar Backing Leon 2.16.1: player unico, timeline sincronizzate, espansione fullscreen.
  * Non viene creato alcun secondo elemento audio; anche su iOS la vista estesa
  * si limita a riposizionare i pannelli, senza interrompere la riproduzione. */
 (function(){
@@ -8,6 +8,12 @@
   function attach({audio,getDuration=()=>0,onSeek=()=>{}}){
     const transports=[...document.querySelectorAll('.section-transport')];
     const buttons=[...document.querySelectorAll('.section-fullscreen')];
+    // The expand control lives beside the panel title, not inside the crowded player toolbar.
+    function refreshExpandedHeader(){
+      if(!expanded)return;
+      const header=expanded.querySelector('.panel-heading');
+      if(header)expanded.style.setProperty('--gbl-expand-head-h',`${Math.ceil(header.getBoundingClientRect().height)}px`);
+    }
     let expanded=null, savedScroll=0, savedFocus=null, native=false;
     let frame=0, lastFrame=0;
     function duration(){
@@ -65,10 +71,11 @@
       const panel=expanded;
       expanded=null;native=false;
       panel.classList.remove('gbl-fullscreen','gbl-fullscreen-fallback');
+      panel.style.removeProperty('--gbl-expand-head-h');
       document.documentElement.classList.remove('gbl-expanded-active');
       document.body.classList.remove('gbl-expanded-active');
       buttons.forEach(b=>{
-        b.setAttribute('aria-expanded','false');b.textContent='⛶ Tutto schermo';
+        b.setAttribute('aria-expanded','false');b.textContent='⛶ Espandi';
         b.setAttribute('aria-label','Espandi '+(b.dataset.target==='chords-panel'?'accordi':'karaoke')+' a tutto schermo');
       });
       window.scrollTo({top:savedScroll,behavior:'auto'});
@@ -92,9 +99,10 @@
       buttons.forEach(b=>{
         const own=b===button;
         b.setAttribute('aria-expanded',own?'true':'false');
-        b.textContent=own?'⤢ Riduci':'⛶ Tutto schermo';
+        b.textContent=own?'⤢ Riduci':'⛶ Espandi';
         b.setAttribute('aria-label',own?'Esci da tutto schermo':'Espandi a tutto schermo');
       });
+      refreshExpandedHeader();
       // Fullscreen nativo dove supportato, fallback CSS per Safari iOS e PWA.
       try{
         if(typeof panel.requestFullscreen!=='function')throw Error('Fullscreen nativo non supportato');
@@ -112,9 +120,10 @@
       const panel=document.getElementById(button.dataset.target);
       if(panel&&!panel.hidden)openExpanded(panel,button);
     }));
+    window.addEventListener('resize',refreshExpandedHeader,{passive:true});
     document.addEventListener('fullscreenchange',()=>{
       if(expanded){
-        if(document.fullscreenElement===expanded){native=true;expanded.classList.remove('gbl-fullscreen-fallback');}
+        if(document.fullscreenElement===expanded){native=true;expanded.classList.remove('gbl-fullscreen-fallback');refreshExpandedHeader();}
         else if(native)clearExpanded();
       }
     });

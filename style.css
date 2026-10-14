@@ -231,3 +231,40 @@ header{flex-wrap:wrap;gap:12px}
  .section-transport-actions{flex-wrap:wrap}
 }
 .panel.gbl-fullscreen,.panel:fullscreen{max-width:none!important}
+
+
+/* Web 2.16.1: "Espandi" sempre riconoscibile accanto ai titoli 03 e 04. */
+#chords-panel > .panel-heading, #karaoke-panel > .panel-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:14px;min-width:0;
+}
+#chords-panel > .panel-heading h2, #karaoke-panel > .panel-heading h2{
+  margin:0;min-width:0;line-height:1.32;overflow-wrap:break-word;
+}
+#chords-panel > .panel-heading .section-fullscreen,
+#karaoke-panel > .panel-heading .section-fullscreen{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  flex:0 0 auto;white-space:nowrap;cursor:pointer;
+  min-height:44px;padding:10px 12px;border-radius:10px;
+  background:#155d65;border:1px solid #5cbead;color:#f2fffc;
+  font-size:13px;font-weight:750;box-shadow:0 0 0 1px #234b4b;
+}
+#chords-panel > .panel-heading .section-fullscreen:disabled,
+#karaoke-panel > .panel-heading .section-fullscreen:disabled{opacity:.6}
+#chords-panel > .panel-heading .section-fullscreen:focus-visible,
+#karaoke-panel > .panel-heading .section-fullscreen:focus-visible{
+  outline:3px solid #b5f7df;outline-offset:2px;
+}
+@media(max-width:440px){
+ #chords-panel > .panel-heading h2, #karaoke-panel > .panel-heading h2{font-size:17px}
+ #chords-panel > .panel-heading .section-fullscreen,
+ #karaoke-panel > .panel-heading .section-fullscreen{min-height:44px;padding:10px;font-size:13px}
+}
+/* Durante la vista estesa, il pulsante per ridurla rimane sempre visibile. */
+.panel.gbl-fullscreen > .panel-heading{
+  position:sticky;top:0;z-index:20;background:#0f192b;
+  padding:8px 0;margin:-8px 0 6px!important;
+}
+.panel.gbl-fullscreen > .section-transport{
+  top:var(--gbl-expand-head-h,64px);
+}
