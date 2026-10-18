@@ -95,13 +95,58 @@
     let lyricsOffset=0, originalWords=[], originalChords=[], originalDuration=0;
     let rows=[],wordEls=[],currentRow=-1,currentChord=-2,lastHorizontalTime=-1;
     let nowEl=null,nextEl=null,untilEl=null,fillEl=null;
+    // Preferenza solo locale del dispositivo, indipendente dai file lyrics.json.
+    const ZOOM_KEY='gbl-karaoke-zoom';
+    const ZOOM_MIN=.8, ZOOM_MAX=2.2, ZOOM_STEP=.2;
+    let lyricScale=1,lastTickTime=0;
+    try {
+      const saved=Number(localStorage.getItem(ZOOM_KEY));
+      if(Number.isFinite(saved)&&saved>=ZOOM_MIN&&saved<=ZOOM_MAX)lyricScale=saved;
+    } catch(_) {}
+    // I test senza un DOM completo non espongono getElementById.
+    const zoomButton=id=>typeof document.getElementById==='function' ? document.getElementById(id) : null;
+    const zoomOut=zoomButton('karaoke-zoom-out');
+    const zoomIn=zoomButton('karaoke-zoom-in');
+    const zoomReset=zoomButton('karaoke-zoom-reset');
+    function applyZoomStyle(){
+      if(root.style && root.style.setProperty){
+        root.style.setProperty('--gbl-lyric-scale',String(lyricScale));
+        const expansion=Math.max(0,lyricScale-1)*36;
+        root.style.setProperty('--gbl-lyric-row-height',`${Math.round(83+expansion)}px`);
+        root.style.setProperty('--gbl-lyric-row-nochords-height',`${Math.round(43+expansion)}px`);
+      }
+    }
+    function updateZoomControls(){
+      if(zoomReset){
+        zoomReset.textContent=`${Math.round(lyricScale*100)}%`;
+        zoomReset.title='Ripristina al 100%';
+      }
+      if(zoomOut)zoomOut.disabled=lyricScale<=ZOOM_MIN+.001;
+      if(zoomIn)zoomIn.disabled=lyricScale>=ZOOM_MAX-.001;
+    }
+    function setZoom(value){
+      const n=Number(value);
+      if(!Number.isFinite(n))return;
+      const next=Math.round(clamp(n,ZOOM_MIN,ZOOM_MAX)*100)/100;
+      if(next===lyricScale)return;
+      lyricScale=next;
+      try {localStorage.setItem(ZOOM_KEY,String(lyricScale));} catch(_) {}
+      applyZoomStyle();updateZoomControls();
+      render(originalWords,originalChords,originalDuration);
+      tick(lastTickTime,true);
+    }
+    if(zoomOut)zoomOut.addEventListener('click',()=>setZoom(lyricScale-ZOOM_STEP));
+    if(zoomIn)zoomIn.addEventListener('click',()=>setZoom(lyricScale+ZOOM_STEP));
+    if(zoomReset)zoomReset.addEventListener('click',()=>setZoom(1));
+    applyZoomStyle();updateZoomControls();
     function makeTimeMap(segment,baseWidth){
       let xEnd=0;
       const anchors=[{t:segment.start,x:0}],positions=[];
       for (const w of segment.words){
         const text=String(w.text||'');
-        const width=clamp(text.length*9+21,38,255);
-        const x=positions.length ? Math.max((w.start-segment.start)*69,xEnd+13) : 0;
+        // Espande anche la mappa orizzontale quando il testo viene ingrandito.
+        const width=clamp((text.length*9+21)*lyricScale,38*lyricScale,255*lyricScale);
+        const x=positions.length ? Math.max((w.start-segment.start)*69*lyricScale,xEnd+13*lyricScale) : 0;
         positions.push({word:w,x,width});
         anchors.push({t:w.start,x});
         xEnd=x+width;
@@ -122,6 +167,7 @@
     }
     function render(words,chords=[],duration=0){
       originalWords=words||[];originalChords=chords||[];originalDuration=duration;
+      applyZoomStyle();
       root.replaceChildren();
       // Offset fisso facoltativo; niente correzioni progressive durante l'ascolto.
       // Le parole e gli accordi seguono entrambi audio.currentTime.
@@ -222,6 +268,7 @@
     }
     function tick(time,autoScroll=true){
       const t=Math.max(0,num(time)||0);
+      lastTickTime=t;
       for(const {button,word} of wordEls){
         button.classList.toggle('singing',t>=word.start && t<word.end);
         button.classList.toggle('sung',t>=word.end);
@@ -283,7 +330,7 @@
       lyricsOffset=Number.isFinite(n)?Math.max(-5,Math.min(5,n)):0;
       render(originalWords,originalChords,originalDuration);
     }
-    return {render,tick,setOffset,getOffset:()=>lyricsOffset};
+    return {render,tick,setOffset,getOffset:()=>lyricsOffset,setZoom,getZoom:()=>lyricScale};
   }
   window.GuitarKaraoke={make,buildSegments,chordAt};
 })();

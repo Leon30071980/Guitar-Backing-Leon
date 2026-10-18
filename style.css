@@ -346,3 +346,31 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
  #global-transport .section-transport-actions,#global-transport .stem-buttons{gap:4px}
  #global-transport .stem-toggle{font-size:11px;padding:7px 3px}
 }
+
+/* 2.19.8 — zoom delle sole parole karaoke, con pulsanti accessibili anche in fullscreen. */
+#karaoke-panel > .panel-heading { flex-wrap:wrap; }
+#karaoke-panel > .panel-heading h2 { flex:1 1 210px; }
+#karaoke-panel .karaoke-heading-actions {
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  min-width:0;margin-left:auto;
+}
+#karaoke-panel .karaoke-zoom {display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex:0 0 auto}
+#karaoke-panel .karaoke-zoom button {
+  min-height:44px;min-width:44px;padding:9px 9px;
+  font-size:15px;line-height:1;font-weight:800;color:#e9f7f2;
+  background:#223e4d;border:1px solid #577e88;border-radius:9px;
+  touch-action:manipulation;cursor:pointer;
+}
+#karaoke-panel .karaoke-zoom .karaoke-zoom-reset{min-width:53px;font-size:12px;color:#82edc8}
+#karaoke-panel .karaoke-zoom button:disabled{opacity:.38;cursor:default}
+#karaoke-panel .karaoke-zoom button:focus-visible {outline:2px solid #b5f7df;outline-offset:2px}
+#karaoke-panel .karaoke-time-word{font-size:calc(1.05rem * var(--gbl-lyric-scale,1));}
+#karaoke-panel .karaoke-sung .karaoke-timed-stage{height:var(--gbl-lyric-row-height,83px);}
+#karaoke-panel .karaoke-no-local-chords .karaoke-timed-stage{height:var(--gbl-lyric-row-nochords-height,43px);}
+@media(max-width:600px){
+  #karaoke-panel .karaoke-time-word{font-size:calc(.98rem * var(--gbl-lyric-scale,1));}
+}
+@media(max-width:540px){
+  #karaoke-panel > .panel-heading h2{flex:1 0 100%;}
+  #karaoke-panel .karaoke-heading-actions{width:100%;justify-content:space-between;margin-left:0}
+}

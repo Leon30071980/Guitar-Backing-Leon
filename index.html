@@ -10,11 +10,11 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.19.0" rel="stylesheet"/>
+<link href="./style.css?v=2.19.8" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
 <script defer="" src="./chord_tools.js?v=2.19.0"></script>
-<script defer="" src="./karaoke.js?v=2.19.0"></script>
+<script defer="" src="./karaoke.js?v=2.19.8"></script>
 <script defer="" src="./transport_ui.js?v=2.19.0"></script>
 <script defer="" src="./continuous_mixer.js?v=2.19.0"></script>
 <script defer="" src="./app.js?v=2.19.0"></script>
@@ -79,7 +79,13 @@
 <p class="hint">Accordi stimati automaticamente: verificarli a orecchio. Il simbolo — significa accordo non identificato. Il capotasto modifica solo le posizioni mostrate, non l’audio.</p>
 </section>
 <section class="panel karaoke-panel" hidden="" id="karaoke-panel">
-<div class="panel-heading"><h2>04 · Testo karaoke + accordi</h2><button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div>
+<div class="panel-heading"><h2>04 · Testo karaoke + accordi</h2><div class="karaoke-heading-actions">
+<div aria-label="Dimensione del testo karaoke" class="karaoke-zoom" role="group">
+<button aria-label="Riduci le parole" class="secondary" id="karaoke-zoom-out" type="button">A−</button>
+<button aria-label="Ripristina dimensione testo al 100 per cento" class="secondary karaoke-zoom-reset" id="karaoke-zoom-reset" type="button">100%</button>
+<button aria-label="Ingrandisci le parole" class="secondary" id="karaoke-zoom-in" type="button">A+</button>
+</div>
+<button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div></div>
 
 <div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input id="lyrics-offset" max="5" min="-5" step="0.1" type="range" value="0"/><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div>
 <p class="hint" hidden="" id="sync-audio-check" role="status"></p>
@@ -103,7 +109,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </section>
 </section>
-<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.19.0</span></footer>
+<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.19.8</span></footer>
 </main>
 </body>
 </html>
