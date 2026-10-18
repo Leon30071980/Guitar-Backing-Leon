@@ -374,3 +374,90 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
   #karaoke-panel > .panel-heading h2{flex:1 0 100%;}
   #karaoke-panel .karaoke-heading-actions{width:100%;justify-content:space-between;margin-left:0}
 }
+
+/* 2.19.9 — Leggio karaoke immobile: 3 posizioni, nessuna timeline scorrevole.
+   Le parole mantengono una normale spaziatura e vanno a capo a larghezza di schermo. */
+#karaoke-panel .karaoke-lines{
+  max-height:none;min-height:0;overflow:visible;overscroll-behavior:auto;
+  scroll-behavior:auto;scrollbar-gutter:auto;padding:10px;
+}
+#karaoke-panel .karaoke-follow{position:relative;top:auto;margin-bottom:10px}
+#karaoke-panel .karaoke-fixed-score{
+  display:grid;grid-template-rows:70px minmax(112px,auto) 70px;row-gap:9px;
+  overflow:hidden;min-width:0;
+}
+#karaoke-panel .karaoke-fixed-line{
+  display:none;position:relative;box-sizing:border-box;
+  width:100%;min-width:0;margin:0;padding:9px 12px;
+  border:1px solid #334558;border-radius:12px;
+  opacity:1;transition:none;background:#142032;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-prev{
+  display:block;grid-row:1;opacity:.65;height:70px;overflow:hidden;
+}
+#karaoke-panel .karaoke-fixed-line.line-current{
+  display:block;grid-row:2;opacity:1;
+  border:2px solid #58cdaa;background:#17323c;
+  min-height:112px;
+  padding:11px 12px;outline:none;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-next{
+  display:block;grid-row:3;opacity:.82;height:70px;overflow:hidden;
+}
+#karaoke-panel .karaoke-fixed-label{
+  font-size:.68rem;font-weight:750;color:#97b9bd;
+  letter-spacing:.04em;margin-bottom:5px;
+}
+#karaoke-panel .karaoke-fixed-line.line-current .karaoke-fixed-label{color:#85f1cd}
+#karaoke-panel .karaoke-fixed-words{
+  display:flex;flex-wrap:wrap;align-content:start;align-items:baseline;
+  justify-content:center;gap:.12em .29em;
+  min-width:0;width:100%;line-height:1.4;
+}
+#karaoke-panel .karaoke-time-word{
+  position:static;left:auto;top:auto;display:inline;
+  flex:0 0 auto;margin:0;padding:0 1px;
+  font-size:calc(1.1rem * var(--gbl-lyric-scale,1));
+  line-height:1.42;letter-spacing:normal;white-space:normal;
+  overflow-wrap:anywhere;word-break:normal;
+  border:0;border-radius:3px;background:transparent;
+  color:#d6e2ec;font-weight:650;cursor:pointer;text-align:center;
+  max-width:100%;
+}
+#karaoke-panel .karaoke-time-word.sung{color:#a8bebf}
+#karaoke-panel .karaoke-time-word.singing{
+  background:#168476;color:#fff;box-shadow:0 0 0 2px #16847630;
+}
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{
+  font-size:calc(.84rem * var(--gbl-lyric-scale,1));
+}
+#karaoke-panel .karaoke-fixed-chords{
+  display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;
+  margin:0 0 6px;min-height:22px;max-width:100%;
+}
+#karaoke-panel .karaoke-time-chord{
+  position:static;display:inline-flex;align-items:center;justify-content:center;
+  min-width:0;max-width:none;margin:0;padding:2px 7px;
+  font-size:.8rem;line-height:1.2;
+}
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-fixed-chords{display:none}
+#karaoke-panel .karaoke-instrumental-label{color:#adcfc9;font-style:italic}
+#karaoke-panel .karaoke-stanza-start{margin-top:0}
+@media(max-width:600px){
+  #karaoke-panel .karaoke-lines{padding:4px}
+  #karaoke-panel .karaoke-fixed-score{row-gap:6px}
+  #karaoke-panel .karaoke-fixed-line{padding:7px 8px}
+  #karaoke-panel .karaoke-fixed-line.line-current{padding:10px 8px}
+  #karaoke-panel .karaoke-time-word{font-size:calc(1.18rem * var(--gbl-lyric-scale,1))}
+  #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{font-size:calc(.83rem * var(--gbl-lyric-scale,1))}
+  #karaoke-panel .karaoke-fixed-words{gap:.10em .26em}
+}
+/* 2.19.9 — Stato mantenimento schermo iPhone, fuori dai comandi. */
+#screen-wake-status{display:block;min-height:0;margin-top:4px;text-align:center;
+ font-size:11px;color:#9edfc9;line-height:1.3}
+#screen-wake-status[data-status="unsupported"],
+#screen-wake-status[data-status="unavailable"]{color:#efc998}
+#screen-wake-status:empty{display:none}
+
+/* In fullscreen la partitura resta una vista fissa, non un riquadro scrollabile. */
+.panel.gbl-fullscreen.karaoke-panel .karaoke-lines{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;}

@@ -90,37 +90,27 @@
     return focus;
   }
 
+  // Il karaoke è un leggio a tre posizioni fisse: precedente / corrente / prossimo.
+  // Mai scorrere il testo in funzione dei secondi. Solo i colori cambiano parola per parola.
   function make({root,formatChord=(s=>s),onSeek,onWordClick,isEditing=()=>false}) {
     let model={segments:[],words:[],chords:[],duration:0};
-    let lyricsOffset=0, originalWords=[], originalChords=[], originalDuration=0;
-    let rows=[],wordEls=[],currentRow=-1,currentChord=-2,lastHorizontalTime=-1;
+    let lyricsOffset=0, originalWords=[],originalChords=[],originalDuration=0;
+    let rows=[],wordEls=[],currentRow=-1,currentChord=-2,lastTickTime=0;
     let nowEl=null,nextEl=null,untilEl=null,fillEl=null;
-    // Preferenza solo locale del dispositivo, indipendente dai file lyrics.json.
     const ZOOM_KEY='gbl-karaoke-zoom';
-    const ZOOM_MIN=.8, ZOOM_MAX=2.2, ZOOM_STEP=.2;
-    let lyricScale=1,lastTickTime=0;
+    const ZOOM_MIN=.8,ZOOM_MAX=2.2,ZOOM_STEP=.2;
+    let lyricScale=1;
     try {
       const saved=Number(localStorage.getItem(ZOOM_KEY));
       if(Number.isFinite(saved)&&saved>=ZOOM_MIN&&saved<=ZOOM_MAX)lyricScale=saved;
-    } catch(_) {}
-    // I test senza un DOM completo non espongono getElementById.
-    const zoomButton=id=>typeof document.getElementById==='function' ? document.getElementById(id) : null;
-    const zoomOut=zoomButton('karaoke-zoom-out');
-    const zoomIn=zoomButton('karaoke-zoom-in');
-    const zoomReset=zoomButton('karaoke-zoom-reset');
+    }catch(_){}
+    const buttonById=id=>typeof document.getElementById==='function'?document.getElementById(id):null;
+    const zoomOut=buttonById('karaoke-zoom-out'),zoomIn=buttonById('karaoke-zoom-in'),zoomReset=buttonById('karaoke-zoom-reset');
     function applyZoomStyle(){
-      if(root.style && root.style.setProperty){
-        root.style.setProperty('--gbl-lyric-scale',String(lyricScale));
-        const expansion=Math.max(0,lyricScale-1)*36;
-        root.style.setProperty('--gbl-lyric-row-height',`${Math.round(83+expansion)}px`);
-        root.style.setProperty('--gbl-lyric-row-nochords-height',`${Math.round(43+expansion)}px`);
-      }
+      root.style?.setProperty?.('--gbl-lyric-scale',String(lyricScale));
     }
     function updateZoomControls(){
-      if(zoomReset){
-        zoomReset.textContent=`${Math.round(lyricScale*100)}%`;
-        zoomReset.title='Ripristina al 100%';
-      }
+      if(zoomReset){zoomReset.textContent=`${Math.round(lyricScale*100)}%`;zoomReset.title='Ripristina al 100%';}
       if(zoomOut)zoomOut.disabled=lyricScale<=ZOOM_MIN+.001;
       if(zoomIn)zoomIn.disabled=lyricScale>=ZOOM_MAX-.001;
     }
@@ -130,54 +120,25 @@
       const next=Math.round(clamp(n,ZOOM_MIN,ZOOM_MAX)*100)/100;
       if(next===lyricScale)return;
       lyricScale=next;
-      try {localStorage.setItem(ZOOM_KEY,String(lyricScale));} catch(_) {}
+      try{localStorage.setItem(ZOOM_KEY,String(lyricScale));}catch(_){}
       applyZoomStyle();updateZoomControls();
-      render(originalWords,originalChords,originalDuration);
-      tick(lastTickTime,true);
+      // No rebuilding: preserves focus, highlighted word, seek state and DOM nodes.
     }
-    if(zoomOut)zoomOut.addEventListener('click',()=>setZoom(lyricScale-ZOOM_STEP));
-    if(zoomIn)zoomIn.addEventListener('click',()=>setZoom(lyricScale+ZOOM_STEP));
-    if(zoomReset)zoomReset.addEventListener('click',()=>setZoom(1));
+    zoomOut?.addEventListener('click',()=>setZoom(lyricScale-ZOOM_STEP));
+    zoomIn?.addEventListener('click',()=>setZoom(lyricScale+ZOOM_STEP));
+    zoomReset?.addEventListener('click',()=>setZoom(1));
     applyZoomStyle();updateZoomControls();
-    function makeTimeMap(segment,baseWidth){
-      let xEnd=0;
-      const anchors=[{t:segment.start,x:0}],positions=[];
-      for (const w of segment.words){
-        const text=String(w.text||'');
-        // Espande anche la mappa orizzontale quando il testo viene ingrandito.
-        const width=clamp((text.length*9+21)*lyricScale,38*lyricScale,255*lyricScale);
-        const x=positions.length ? Math.max((w.start-segment.start)*69*lyricScale,xEnd+13*lyricScale) : 0;
-        positions.push({word:w,x,width});
-        anchors.push({t:w.start,x});
-        xEnd=x+width;
-      }
-      const width=Math.max(baseWidth,xEnd+26);
-      anchors.push({t:segment.end,x:width});
-      function map(t){
-        if(t<=anchors[0].t)return 0;
-        for(let i=1;i<anchors.length;i++){
-          if(t<=anchors[i].t){
-            const a=anchors[i-1],b=anchors[i];
-            return clamp(a.x+(b.x-a.x)*((t-a.t)/Math.max(.00001,b.t-a.t)),0,width);
-          }
-        }
-        return width;
-      }
-      return {map,positions,width};
-    }
+
     function render(words,chords=[],duration=0){
       originalWords=words||[];originalChords=chords||[];originalDuration=duration;
-      applyZoomStyle();
       root.replaceChildren();
-      // Offset fisso facoltativo; niente correzioni progressive durante l'ascolto.
-      // Le parole e gli accordi seguono entrambi audio.currentTime.
       const correctedTime=t=>Math.max(0,Number(t)+lyricsOffset);
       const visualWords=(Array.isArray(words)?words:[]).map(w=>{
         const start=correctedTime(w.start),end=correctedTime(w.end);
         return {...w,start,end:Math.max(start+.015,end)};
       });
       model=buildSegments(visualWords,chords,duration);
-      rows=[];wordEls=[];currentRow=-1;currentChord=-2;lastHorizontalTime=-1;
+      rows=[];wordEls=[];currentRow=-1;currentChord=-2;
       const follow=makeEl('div','karaoke-follow');
       follow.setAttribute('aria-label','Accordo attuale e prossimo accordo');
       const top=makeEl('div','karaoke-follow-top');
@@ -196,81 +157,59 @@
         root.append(makeEl('p','karaoke-empty','Non sono ancora disponibili parole o accordi per questo brano.'));
         return;
       }
+      const score=makeEl('div','karaoke-fixed-score');
+      score.setAttribute('aria-label','Leggio karaoke: verso precedente, corrente e successivo');
+      root.append(score);
       model.segments.forEach((segment,index)=>{
         const instrumental=segment.type==='instrumental';
-        const prevSegment=model.segments[index-1];
-        const stanzaBreak=!instrumental && prevSegment && prevSegment.type==='words' &&
-          segment.line-prevSegment.line>1;
-        const section=makeEl('section','karaoke-section '+(instrumental?'karaoke-instrumental':'karaoke-sung')+
-          (stanzaBreak?' karaoke-stanza-start':''));
-        if(instrumental){
-          const header=makeEl('div','karaoke-section-head',`♪ ${segment.label} · ${stamp(segment.start)}–${stamp(segment.end)}`);
-          section.append(header);
-        }
-        const scroll=makeEl('div','karaoke-section-scroll');
-        const stage=makeEl('div','karaoke-timed-stage');
-        const period=Math.max(.1,segment.end-segment.start);
-        let width=Math.max(300,Math.round(period*(instrumental?42:66))+42);
-        let map,positions=[];
-        if(!instrumental){
-          const info=makeTimeMap(segment,width);
-          map=info.map;positions=info.positions;width=info.width;
-        } else {map=t=>clamp((t-segment.start)/period*width,0,width);}
-        stage.style.width=`${Math.ceil(width)}px`;
-        const markerIndices=[];
+        const previous=model.segments[index-1];
+        const stanzaBreak=!instrumental && previous?.type==='words' && segment.line-previous.line>1;
+        const section=makeEl('section','karaoke-section karaoke-fixed-line '+(instrumental?'karaoke-instrumental':'karaoke-sung')+(stanzaBreak?' karaoke-stanza-start':''));
+        const header=makeEl('div','karaoke-fixed-label',instrumental?`♪ ${segment.label}`:`VERSO ${segment.line+1}`);
+        section.append(header);
+        const text=makeEl('div','karaoke-fixed-words');
+        // Accord badges follow their timestamps, but live on a compact row;
+        // they never stretch words according to their time coordinates.
+        const strip=makeEl('div','karaoke-fixed-chords');
+        const markers=[];
         const carried=chordAt(model.chords,segment.start);
-        const prev=model.segments[index-1];
-        // Mostra l'accordo d'ingresso solo se non viene gia' ripetuto dal verso precedente.
-        const enteredDuringGap=carried>=0 && prev && model.chords[carried].start>prev.end+0.01;
-        if(carried>=0 && (index===0 || enteredDuringGap))markerIndices.push(carried);
+        const enteredDuringGap=carried>=0 && previous && model.chords[carried].start>previous.end+0.01;
+        const markerIndices=[];
+        if(carried>=0&&(index===0||enteredDuringGap))markerIndices.push(carried);
         model.chords.forEach((c,i)=>{
-          if(c.start>=segment.start-.0001 && c.start<segment.end-.0001)markerIndices.push(i);
+          if(c.start>=segment.start-.0001&&c.start<segment.end-.0001)markerIndices.push(i);
         });
         const unique=[...new Set(markerIndices)].sort((a,b)=>model.chords[a].start-model.chords[b].start);
-        const laneEnds=[-100,-100];
-        const chordMarkers=[];
-        for(const idx of unique){
-          const chord=model.chords[idx];
-          const at=clamp(chord.start,segment.start,segment.end);
-          const x=map(at);
-          const label=String(formatChord(chord.chord)||'—');
-          // Sopprimere i marker "nessun accordo"; il tempo continua normalmente.
-          if(label==='—'||chord.chord==='N')continue;
+        unique.forEach(idx=>{
+          const chord=model.chords[idx],label=String(formatChord(chord.chord)||'—');
+          if(chord.chord==='N'||label==='—')return;
           const btn=makeEl('button','karaoke-time-chord',label);
-          btn.type='button';
-          btn.title=`${label} · ${stamp(chord.start)} (${chord.start.toFixed(2)} s)`;
-          const w=clamp(label.length*9+25,46,100);
-          let lane=laneEnds.findIndex(end=>x>=end+6);
-          if(lane<0)lane=laneEnds.indexOf(Math.min(...laneEnds));
-          laneEnds[lane]=x+w;
-          btn.style.left=`${Math.round(x)}px`;
-          btn.style.top=`${3+lane*25}px`;
+          btn.type='button';btn.title=`${label} · ${stamp(chord.start)} (${chord.start.toFixed(2)} s)`;
           btn.addEventListener('click',()=>onSeek?.(chord.start));
-          stage.append(btn);
-          chordMarkers.push({button:btn,index:idx});
-        }
-        if(!instrumental && chordMarkers.length===0) section.className+=' karaoke-no-local-chords';
+          strip.append(btn);markers.push({button:btn,index:idx});
+        });
+        section.append(strip);
+        if(!markers.length)section.className+=' karaoke-no-local-chords';
         if(!instrumental){
-          positions.forEach(({word,x})=>{
-            const button=makeEl('button','karaoke-time-word',String(word.text||''));
-            button.type='button';
-            button.title=`${word.start.toFixed(2)}–${word.end.toFixed(2)} s`;
-            button.style.left=`${Math.round(x)}px`;
-            button.addEventListener('click',()=>isEditing()?onWordClick?.(word.index):onSeek?.(word.start));
-            stage.append(button);
-            wordEls.push({button,word});
+          segment.words.forEach(word=>{
+            const btn=makeEl('button','karaoke-time-word',String(word.text||''));
+            btn.type='button';btn.title=`${word.start.toFixed(2)}–${word.end.toFixed(2)} s`;
+            btn.addEventListener('click',()=>isEditing()?onWordClick?.(word.index):onSeek?.(word.start));
+            text.append(btn);wordEls.push({button:btn,word});
           });
+        }else{
+          text.append(makeEl('span','karaoke-instrumental-label','♪ Intervallo musicale'));
         }
-        scroll.append(stage);section.append(scroll);root.append(section);
-        const focusStart = focusStartForSegment(segment,prevSegment,model.chords);
-        rows.push({section,scroll,segment,map,chordMarkers,focusStart});
+        section.append(text);score.append(section);
+        rows.push({section,segment,chordMarkers:markers,focusStart:focusStartForSegment(segment,previous,model.chords)});
       });
+      tick(lastTickTime,false);
     }
-    function tick(time,autoScroll=true){
+    function tick(time,_autoScroll=true){
       const t=Math.max(0,num(time)||0);
       lastTickTime=t;
       for(const {button,word} of wordEls){
-        button.classList.toggle('singing',t>=word.start && t<word.end);
+        button.classList.toggle('singing',t>=word.start&&t<word.end);
         button.classList.toggle('sung',t>=word.end);
       }
       const idx=chordAt(model.chords,t);
@@ -284,7 +223,7 @@
       if(nowEl)nowEl.textContent=chord?String(formatChord(chord.chord)||'—'):'—';
       let upcoming=null;
       for(const candidate of model.chords){
-        if(candidate.start>t+.001 && candidate.chord!=='N' && (!chord || candidate.chord!==chord.chord)){
+        if(candidate.start>t+.001&&candidate.chord!=='N'&&(!chord||candidate.chord!==chord.chord)){
           upcoming=candidate;break;
         }
       }
@@ -294,36 +233,21 @@
         const progress=chord?100*clamp((t-chord.start)/Math.max(.001,chord.end-chord.start),0,1):0;
         fillEl.style.width=`${progress.toFixed(1)}%`;
       }
-      // Anticipa SOLO il focus del verso (primo accordo nella pausa o prima
-      // parola); l'evidenziazione delle singole parole resta sul tempo reale.
-      // Gli accordi cambiano SEMPRE al proprio timestamp musicale.
       let rowIndex=-1;
       for(let i=0;i<rows.length;i++){
-        if(rows[i].focusStart<=t+.0001)rowIndex=i;
-        else break;
+        if(rows[i].focusStart<=t+.0001)rowIndex=i;else break;
       }
-      if(rowIndex<0 && rows.length)rowIndex=0;
+      if(rowIndex<0&&rows.length)rowIndex=0;
       if(rowIndex!==currentRow){
-        rows.forEach((row,i)=>row.section.classList.toggle('line-current',i===rowIndex));
-        if(autoScroll && rowIndex>=0 && !isEditing() && root.clientHeight>0 && root.scrollHeight>root.clientHeight){
-          const line=rows[rowIndex].section;
-          const y=line.getBoundingClientRect().top-root.getBoundingClientRect().top+root.scrollTop;
-          const target=Math.max(0,y-root.clientHeight*.35);
-          if(Math.abs(target-root.scrollTop)>28)root.scrollTo?.({top:target,behavior:'smooth'});
-        }
+        rows.forEach((row,i)=>{
+          row.section.classList.toggle('line-current',i===rowIndex);
+          row.section.classList.toggle('karaoke-prev',i===rowIndex-1);
+          row.section.classList.toggle('karaoke-next',i===rowIndex+1);
+          row.section.setAttribute('aria-hidden',Math.abs(i-rowIndex)>1?'true':'false');
+        });
         currentRow=rowIndex;
       }
-      if(autoScroll&&rowIndex>=0&&!isEditing()&&Math.abs(t-lastHorizontalTime)>.1){
-        const row=rows[rowIndex];
-        const center=row.map(clamp(t,row.segment.start,row.segment.end));
-        const viewport=row.scroll.clientWidth||320;
-        const left=Math.max(0,center-viewport*.34);
-        // Solo il verso attivo si muove orizzontalmente.
-        if(Math.abs((row.scroll.scrollLeft||0)-left)>9){
-          row.scroll.scrollTo?.({left,behavior:'auto'});
-        }
-        lastHorizontalTime=t;
-      }
+      // Intentional: no scrollTo(), no scrollLeft, no moving timeline.
     }
     function setOffset(value){
       const n=Number(value);
