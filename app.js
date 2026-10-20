@@ -12,8 +12,12 @@ const APP_FOLDER = 'Guitar Backing Leon';
 const MIME_FOLDER = 'application/vnd.google-apps.folder';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const capoSelect = $('capo-position');
-try { capoSelect.value = String(Math.min(12, Math.max(0, Number(localStorage.getItem('gbl-capo')) || 0))); }
-catch { capoSelect.value = '0'; }
+capoSelect.value='0';
+function restoreCapo(songId){
+  let saved=0;
+  try{const raw=localStorage.getItem('gbl-capo-song-'+String(songId));if(raw!==null)saved=Number(raw);}catch{}
+  capoSelect.value=String(Number.isInteger(saved)&&saved>=0&&saved<=12?saved:0);
+}
 const capoValue = () => Number(capoSelect.value) || 0;
 const shownChord = chord => window.GuitarChordTools.display(chord, capoValue());
 function updateCapo() {
@@ -31,7 +35,7 @@ function updateCapo() {
   syncChords();
 }
 capoSelect.addEventListener('change', () => {
-  try { localStorage.setItem('gbl-capo', capoSelect.value); } catch {}
+  try { current&&localStorage.setItem('gbl-capo-song-'+String(current.id),capoSelect.value); } catch {}
   updateCapo();
 });
 const fmt = v => { const n = Math.max(0,Number(v)||0); return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`; };
@@ -72,7 +76,7 @@ $('player').addEventListener('durationchange',checkAudioDuration);
 const karaokeView=window.GuitarKaraoke.make({
   root:$('karaoke-lines'),
   formatChord: value=>shownChord(value),
-  onSeek: seconds=>{$('player').currentTime=seconds;$('player').play().catch(()=>{});},
+  onSeek: seconds=>{if(!window.GuitarAppReady?.isReady())return;$('player').currentTime=seconds;$('player').play().catch(()=>{});},
 });
 const cachedAudio = new Map();
 const continuousMixer=window.GuitarContinuousMixer.attach($('player'),msg=>notice(msg,true));
@@ -108,7 +112,7 @@ function updateDownload(mode){
 }
 async function prepareMixer(song,serial){
   const mixes=availableMixes();
-  if(Object.keys(mixes).length<4)return;
+  if(Object.keys(mixes).length<4){window.GuitarAppReady?.fail('Tracce mixer mancanti: rielaborare la canzone sul PC.');return;}
   const urls={};
   try {
     const downloads=await Promise.all(Object.entries(mixes).map(async ([mode,id])=>{
@@ -122,9 +126,10 @@ async function prepareMixer(song,serial){
     }));
     if(serial!==mixerSeq || current!==song)return;
     for(const pair of downloads){if(pair)urls[pair[0]]=pair[1];}
-    await continuousMixer.prepare(urls);
-    if(serial===mixerSeq && current===song){updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
-  }catch(err){if(serial===mixerSeq)notice('Mixer non pronto: '+err.message,true);}
+    const mixerPrepared=await continuousMixer.prepare(urls);
+    if(!mixerPrepared)throw new Error('Le tracce del mixer non sono ancora riproducibili.');
+    if(serial===mixerSeq && current===song){window.GuitarAppReady?.setMixer(true);updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
+  }catch(err){if(serial===mixerSeq){window.GuitarAppReady?.fail('Mixer non pronto: '+err.message);notice('Mixer non pronto: '+err.message,true);}}
 }
 async function switchMix(initial=false){
   if(!current)return;
@@ -134,7 +139,7 @@ async function switchMix(initial=false){
   }
   const song=current, serial=++mixerSeq;
   const id=availableMixes().no_guitar || song.audioFileId;
-  if(!id){notice('La base audio non è disponibile.',true);return;}
+  if(!id){window.GuitarAppReady?.fail('Base audio non disponibile.');notice('La base audio non è disponibile.',true);return;}
   const player=$('player');
   player.pause();
   try {
@@ -147,7 +152,7 @@ async function switchMix(initial=false){
     updateDownload('no_guitar');
     notice('Base pronta. Preparazione mixer in corso...');
     prepareMixer(song,serial);
-  }catch(err){if(serial===mixerSeq)notice(err.message,true);}
+  }catch(err){if(serial===mixerSeq){window.GuitarAppReady?.fail('Audio: '+err.message);notice(err.message,true);}}
 }
 $('toggle-guitar').addEventListener('click',()=>{guitarEnabled=!guitarEnabled;switchMix();});
 $('toggle-vocals').addEventListener('click',()=>{vocalsEnabled=!vocalsEnabled;switchMix();});
@@ -239,7 +244,7 @@ function drawLibrary(){
 }
 function renderChords(chords){
   $('chords').replaceChildren();
-  for(const c of chords){const button=document.createElement('button');button.type='button';button.className='chord';button.textContent=`${shownChord(c.chord)} · ${fmt(c.start)}`;button.addEventListener('click',()=>{$('player').currentTime=Number(c.start)||0;$('player').play().catch(()=>{});});$('chords').append(button);}
+  for(const c of chords){const button=document.createElement('button');button.type='button';button.className='chord';button.textContent=`${shownChord(c.chord)} · ${fmt(c.start)}`;button.addEventListener('click',()=>{if(!window.GuitarAppReady?.isReady())return;$('player').currentTime=Number(c.start)||0;$('player').play().catch(()=>{});});$('chords').append(button);}
   if(!chords.length)$('chords').textContent='Accordi non rilevati.';
   updateCapo();
 }
@@ -251,7 +256,7 @@ async function openSong(song){
   ++mixerSeq;
   $('player').pause();
   clearAudioCache();
-  current=song;guitarEnabled=false;vocalsEnabled=true;
+  current=song;window.GuitarAppReady?.reset();restoreCapo(song.id);guitarEnabled=false;vocalsEnabled=true;
   $('chord-engine-source').textContent = (song.chord_source||'').startsWith('guitar+mix')
     ? 'Analisi dalla chitarra isolata; accordi indicativi.'
     : song.chord_source === 'corretto-manualmente' ? 'Accordi con correzioni manuali.'
@@ -270,6 +275,7 @@ async function openSong(song){
 }
 async function loadKaraoke(song){
   if(!song?.lyricsFileId){
+    window.GuitarAppReady?.setLyrics(true);
     $('karaoke-status').textContent='Testo non ancora disponibile. Generarlo dal PC, quindi aggiornare la libreria.';
     return;
   }
@@ -283,10 +289,11 @@ async function loadKaraoke(song){
     updateLyricsOffset(offset);
     karaokeView.render(karaokeWords,song.chords||[],Number(song.duration)||0);
     karaokeView.tick($('player').currentTime,false);
+    window.GuitarAppReady?.setLyrics(true);
     $('karaoke-status').textContent=karaokeWords.length
       ? `${karaokeWords.length} parole · Lingua: ${result.language||'automatica'} · Clicchi una parola per ascoltare da quel punto.`
       : 'Nessun testo riconosciuto per questo brano.';
-  }catch(err){if(current===song)$('karaoke-status').textContent='Impossibile caricare testo: '+err.message;}
+  }catch(err){if(current===song){$('karaoke-status').textContent='Impossibile caricare testo: '+err.message;window.GuitarAppReady?.fail('Karaoke non caricato: '+err.message);}}
 }
 function syncChords(){
   if(!current)return;

@@ -461,3 +461,25 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
 
 /* In fullscreen la partitura resta una vista fissa, non un riquadro scrollabile. */
 .panel.gbl-fullscreen.karaoke-panel .karaoke-lines{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;}
+
+/* v2.19.10: leggibilità, caricamento reale, pannelli compattabili. */
+.gbl-version{font-size:12px;color:#8fdcc9;font-weight:750;letter-spacing:0.08em;margin-top:-4px}
+.gbl-readiness{margin:10px 0 6px;padding:12px 14px;border-radius:10px;font-weight:800;text-align:center;border:1px solid transparent;line-height:1.35}
+.gbl-readiness.gbl-loading{background:#bd9013;color:#161305;border-color:#f5c542;animation:gbl-status-pulse 1.15s ease-in-out infinite}
+.gbl-readiness.gbl-ready{background:#136b48;color:#eaffee;border-color:#48c98f;animation:none}
+.gbl-readiness.gbl-failed{background:#75322e;color:#fff1e9;border-color:#e18f83;animation:none}
+@keyframes gbl-status-pulse{0%,100%{background:#8b680b;box-shadow:0 0 0 transparent}50%{background:#ffde69;box-shadow:0 0 0 3px #f5c54238}}
+@media(prefers-reduced-motion:reduce){.gbl-readiness.gbl-loading{animation:none}}
+#karaoke-panel .karaoke-time-word,#karaoke-panel .karaoke-instrumental-label{text-transform:uppercase}
+.gbl-panel-head,.gbl-collapse-heading{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.gbl-collapse-heading h2{flex:1 1 auto;margin-bottom:0}
+.gbl-collapse-btn{margin-left:auto;min-height:36px;padding:7px 12px;font-size:12px;white-space:nowrap;flex:0 0 auto}
+.panel.gbl-panel-collapsed > :not(.panel-heading):not(.section-head):not(.gbl-panel-head):not(.transport-home){display:none!important}
+.panel.gbl-panel-collapsed:not(#player-panel){padding-bottom:14px}
+.panel.gbl-fullscreen .gbl-collapse-btn{display:none!important}
+@media(max-width:520px){.gbl-collapse-btn{min-height:38px;padding:6px 9px;font-size:12px}}
+
+.gbl-collapse-btn{width:42px;min-width:42px;min-height:42px;padding:6px;text-align:center;font-size:20px;line-height:1}
+
+.tag-ready.gbl-tag-wait{background:#a47a16!important;color:#1b1708!important;border-color:#ffda60!important;animation:gbl-status-pulse 1.15s ease-in-out infinite}
+.tag-ready.gbl-tag-ready{background:#146c4a!important;color:#ecfff1!important;border-color:#48c98f!important;animation:none}
