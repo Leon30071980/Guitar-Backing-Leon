@@ -15,8 +15,25 @@ const capoSelect = $('capo-position');
 try { capoSelect.value = String(Math.min(12, Math.max(0, Number(localStorage.getItem('gbl-capo')) || 0))); }
 catch { capoSelect.value = '0'; }
 const capoValue = () => Number(capoSelect.value) || 0;
+const karaokeCapoSelect=$('capo-position-04');
+const karaokeModeSelect=$('karaoke-chord-mode');
+try{karaokeModeSelect.value=localStorage.getItem('gbl-karaoke-chord-mode')==='simple'?'simple':'original';}catch{}
+const karaokeShownChord=raw=>window.GuitarChordTools.display(
+  karaokeModeSelect.value==='simple'?window.GuitarChordTools.simplify(raw):raw,capoValue());
+function syncScoreControls(){karaokeCapoSelect.value=capoSelect.value;}
+karaokeModeSelect.addEventListener('change',()=>{
+ try{localStorage.setItem('gbl-karaoke-chord-mode',karaokeModeSelect.value);}catch{}
+ karaokeView.render(karaokeWords,current?.chords||[],Number(current?.duration)||0);
+ karaokeView.tick($('player').currentTime,false);
+});
+karaokeCapoSelect.addEventListener('change',()=>{
+ capoSelect.value=karaokeCapoSelect.value;
+ try{localStorage.setItem('gbl-capo',capoSelect.value);}catch{}
+ updateCapo();
+});
 const shownChord = chord => window.GuitarChordTools.display(chord, capoValue());
 function updateCapo() {
+  syncScoreControls();
   const chords = current?.chords || [];
   [...$('chords').children].forEach((button, i) => {
     if (!chords[i]) return;
@@ -71,7 +88,7 @@ $('player').addEventListener('loadedmetadata',checkAudioDuration);
 $('player').addEventListener('durationchange',checkAudioDuration);
 const karaokeView=window.GuitarKaraoke.make({
   root:$('karaoke-lines'),
-  formatChord: value=>shownChord(value),
+  formatChord: value=>karaokeShownChord(value),
   onSeek: seconds=>{$('player').currentTime=seconds;$('player').play().catch(()=>{});},
 });
 const cachedAudio = new Map();

@@ -10,14 +10,15 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.21.4" rel="stylesheet"/>
+<link href="./style.css?v=2.21.5" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
 <script defer="" src="./chord_tools.js?v=2.19.0"></script>
-<script defer="" src="./karaoke.js?v=2.21.4"></script>
+<script defer="" src="./chord_extras.js?v=2.21.5"></script>
+<script defer="" src="./karaoke.js?v=2.21.5"></script>
 <script defer="" src="./transport_ui.js?v=2.19.0"></script>
 <script defer="" src="./continuous_mixer.js?v=2.19.0"></script>
-<script defer="" src="./app.js?v=2.21.4"></script>
+<script defer="" src="./app.js?v=2.21.5"></script>
 
 
 </head>
@@ -90,6 +91,11 @@
 <div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input id="lyrics-offset" max="5" min="-5" step="0.1" type="range" value="0"/><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div>
 <p class="hint" hidden="" id="sync-audio-check" role="status"></p>
 <p class="hint" id="karaoke-status">Caricamento testo...</p>
+<div class="gbl-score-controls" role="group" aria-label="Opzioni accordi pannello 04">
+<label>Accordi <select id="karaoke-chord-mode" aria-label="Visualizzazione accordi"><option value="original">Originali</option><option value="simple">Semplificati</option></select></label>
+<label>Capotasto <select id="capo-position-04" aria-label="Capotasto nel pannello karaoke"><option value="0">0 · Nessuno</option><option value="1">1° tasto</option><option value="2">2° tasto</option><option value="3">3° tasto</option><option value="4">4° tasto</option><option value="5">5° tasto</option><option value="6">6° tasto</option><option value="7">7° tasto</option><option value="8">8° tasto</option><option value="9">9° tasto</option><option value="10">10° tasto</option><option value="11">11° tasto</option><option value="12">12° tasto</option></select></label>
+<span class="gbl-score-help">Passi il mouse sull’accordo per vedere la diteggiatura (oppure usi Tab). La modalità semplificata cambia solo la visualizzazione.</span>
+</div>
 <div class="karaoke-lines" id="karaoke-lines"></div>
 <p class="hint">Le correzioni importate tramite A&S si eseguono dal programma PC e sono disponibili qui dopo la sincronizzazione con Google Drive.</p>
 <p class="hint">Gli accordi seguono la musica anche nelle introduzioni e negli assoli. Le pause brevi non creano righe separate. Per correggere parole e tempi utilizzi l'app Windows.</p>
@@ -110,7 +116,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </section>
 </section>
-<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.21.4</span></footer>
+<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.21.5</span></footer>
 </main>
 </body>
 </html>
