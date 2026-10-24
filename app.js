@@ -12,12 +12,8 @@ const APP_FOLDER = 'Guitar Backing Leon';
 const MIME_FOLDER = 'application/vnd.google-apps.folder';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const capoSelect = $('capo-position');
-capoSelect.value='0';
-function restoreCapo(songId){
-  let saved=0;
-  try{const raw=localStorage.getItem('gbl-capo-song-'+String(songId));if(raw!==null)saved=Number(raw);}catch{}
-  capoSelect.value=String(Number.isInteger(saved)&&saved>=0&&saved<=12?saved:0);
-}
+try { capoSelect.value = String(Math.min(12, Math.max(0, Number(localStorage.getItem('gbl-capo')) || 0))); }
+catch { capoSelect.value = '0'; }
 const capoValue = () => Number(capoSelect.value) || 0;
 const shownChord = chord => window.GuitarChordTools.display(chord, capoValue());
 function updateCapo() {
@@ -35,7 +31,7 @@ function updateCapo() {
   syncChords();
 }
 capoSelect.addEventListener('change', () => {
-  try { current&&localStorage.setItem('gbl-capo-song-'+String(current.id),capoSelect.value); } catch {}
+  try { localStorage.setItem('gbl-capo', capoSelect.value); } catch {}
   updateCapo();
 });
 const fmt = v => { const n = Math.max(0,Number(v)||0); return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`; };
@@ -76,7 +72,7 @@ $('player').addEventListener('durationchange',checkAudioDuration);
 const karaokeView=window.GuitarKaraoke.make({
   root:$('karaoke-lines'),
   formatChord: value=>shownChord(value),
-  onSeek: seconds=>{if(!window.GuitarAppReady?.isReady())return;$('player').currentTime=seconds;$('player').play().catch(()=>{});},
+  onSeek: seconds=>{$('player').currentTime=seconds;$('player').play().catch(()=>{});},
 });
 const cachedAudio = new Map();
 const continuousMixer=window.GuitarContinuousMixer.attach($('player'),msg=>notice(msg,true));
@@ -112,7 +108,7 @@ function updateDownload(mode){
 }
 async function prepareMixer(song,serial){
   const mixes=availableMixes();
-  if(Object.keys(mixes).length<4){window.GuitarAppReady?.fail('Tracce mixer mancanti: rielaborare la canzone sul PC.');return;}
+  if(Object.keys(mixes).length<4)return;
   const urls={};
   try {
     const downloads=await Promise.all(Object.entries(mixes).map(async ([mode,id])=>{
@@ -126,10 +122,9 @@ async function prepareMixer(song,serial){
     }));
     if(serial!==mixerSeq || current!==song)return;
     for(const pair of downloads){if(pair)urls[pair[0]]=pair[1];}
-    const mixerPrepared=await continuousMixer.prepare(urls);
-    if(!mixerPrepared)throw new Error('Le tracce del mixer non sono ancora riproducibili.');
-    if(serial===mixerSeq && current===song){window.GuitarAppReady?.setMixer(true);updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
-  }catch(err){if(serial===mixerSeq){window.GuitarAppReady?.fail('Mixer non pronto: '+err.message);notice('Mixer non pronto: '+err.message,true);}}
+    await continuousMixer.prepare(urls);
+    if(serial===mixerSeq && current===song){updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
+  }catch(err){if(serial===mixerSeq)notice('Mixer non pronto: '+err.message,true);}
 }
 async function switchMix(initial=false){
   if(!current)return;
@@ -139,7 +134,7 @@ async function switchMix(initial=false){
   }
   const song=current, serial=++mixerSeq;
   const id=availableMixes().no_guitar || song.audioFileId;
-  if(!id){window.GuitarAppReady?.fail('Base audio non disponibile.');notice('La base audio non è disponibile.',true);return;}
+  if(!id){notice('La base audio non è disponibile.',true);return;}
   const player=$('player');
   player.pause();
   try {
@@ -152,7 +147,7 @@ async function switchMix(initial=false){
     updateDownload('no_guitar');
     notice('Base pronta. Preparazione mixer in corso...');
     prepareMixer(song,serial);
-  }catch(err){if(serial===mixerSeq){window.GuitarAppReady?.fail('Audio: '+err.message);notice(err.message,true);}}
+  }catch(err){if(serial===mixerSeq)notice(err.message,true);}
 }
 $('toggle-guitar').addEventListener('click',()=>{guitarEnabled=!guitarEnabled;switchMix();});
 $('toggle-vocals').addEventListener('click',()=>{vocalsEnabled=!vocalsEnabled;switchMix();});
@@ -232,10 +227,30 @@ async function refreshAll(){if(refreshing)return;refreshing=true;try{
   $('queue').textContent=valid.length?`${valid.length} brano/i in attesa o in elaborazione sul PC: ${valid.map(x=>x.name).join(' · ')}`:'Nessun brano in attesa.';
 } catch(err){notice(err.message,true);} finally{refreshing=false;}}
 $('refresh').addEventListener('click',refreshAll);
+const gblLibrarySort = $('library-sort');
+const gblCollator = new Intl.Collator('it',{numeric:true,sensitivity:'base'});
+try{gblLibrarySort.value=localStorage.getItem('gbl-web-library-sort')||'title-asc';}catch(_){}
+function gblSongParts(song){
+ const name=String(song.name||'').replace(/\.(mp3|wav|flac|m4a|ogg|aac)$/i,'').trim();
+ const chunks=name.split(/\s+[-–—]\s+/);
+ return {artist:String(song.lyrics_artist||song.artist||(chunks.length>1?chunks[0]:'')),
+         title:String(song.lyrics_title||song.title||(chunks.length>1?chunks.slice(1).join(' - '):name)),name};
+}
+function gblSortedSongs(){
+ const mode=gblLibrarySort.value||'title-asc',field=mode.startsWith('artist-')?'artist':'title',mult=mode.endsWith('desc')?-1:1;
+ return [...songs].sort((a,b)=>{
+   const aa=gblSongParts(a),bb=gblSongParts(b);
+   return mult*(gblCollator.compare(aa[field]||aa.name,bb[field]||bb.name)||gblCollator.compare(aa.name,bb.name));
+ });
+}
+gblLibrarySort.addEventListener('change',()=>{
+ try{localStorage.setItem('gbl-web-library-sort',gblLibrarySort.value);}catch(_){}
+ drawLibrary();
+});
 function drawLibrary(){
   $('library').replaceChildren();
   if(!songs.length){$('library').textContent='Nessuna base ancora disponibile. Avvii l’elaborazione dal PC oppure carichi un brano in coda.';return;}
-  for(const s of songs){
+  for(const s of gblSortedSongs()){
     const btn=document.createElement('button');btn.className='song-row';btn.type='button';
     const a=document.createElement('strong');a.textContent=s.name||'Brano';
     const b=document.createElement('small');b.textContent=`${fmt(s.duration)} · MP3`;btn.append(a,b);
@@ -244,7 +259,7 @@ function drawLibrary(){
 }
 function renderChords(chords){
   $('chords').replaceChildren();
-  for(const c of chords){const button=document.createElement('button');button.type='button';button.className='chord';button.textContent=`${shownChord(c.chord)} · ${fmt(c.start)}`;button.addEventListener('click',()=>{if(!window.GuitarAppReady?.isReady())return;$('player').currentTime=Number(c.start)||0;$('player').play().catch(()=>{});});$('chords').append(button);}
+  for(const c of chords){const button=document.createElement('button');button.type='button';button.className='chord';button.textContent=`${shownChord(c.chord)} · ${fmt(c.start)}`;button.addEventListener('click',()=>{$('player').currentTime=Number(c.start)||0;$('player').play().catch(()=>{});});$('chords').append(button);}
   if(!chords.length)$('chords').textContent='Accordi non rilevati.';
   updateCapo();
 }
@@ -256,10 +271,11 @@ async function openSong(song){
   ++mixerSeq;
   $('player').pause();
   clearAudioCache();
-  current=song;window.GuitarAppReady?.reset();restoreCapo(song.id);guitarEnabled=false;vocalsEnabled=true;
+  current=song;guitarEnabled=false;vocalsEnabled=true;
   $('chord-engine-source').textContent = (song.chord_source||'').startsWith('guitar+mix')
     ? 'Analisi dalla chitarra isolata; accordi indicativi.'
     : song.chord_source === 'corretto-manualmente' ? 'Accordi con correzioni manuali.'
+    : song.chord_source === 'accordiespartiti' ? 'Accordi importati da A&S sul PC: verificare a orecchio.'
     : 'Accordi da un’analisi precedente: per migliorarli utilizzi la rianalisi sul PC.';
   renderChords(song.chords||[]);
   $('karaoke-panel').hidden=false;
@@ -275,7 +291,6 @@ async function openSong(song){
 }
 async function loadKaraoke(song){
   if(!song?.lyricsFileId){
-    window.GuitarAppReady?.setLyrics(true);
     $('karaoke-status').textContent='Testo non ancora disponibile. Generarlo dal PC, quindi aggiornare la libreria.';
     return;
   }
@@ -289,11 +304,10 @@ async function loadKaraoke(song){
     updateLyricsOffset(offset);
     karaokeView.render(karaokeWords,song.chords||[],Number(song.duration)||0);
     karaokeView.tick($('player').currentTime,false);
-    window.GuitarAppReady?.setLyrics(true);
     $('karaoke-status').textContent=karaokeWords.length
       ? `${karaokeWords.length} parole · Lingua: ${result.language||'automatica'} · Clicchi una parola per ascoltare da quel punto.`
       : 'Nessun testo riconosciuto per questo brano.';
-  }catch(err){if(current===song){$('karaoke-status').textContent='Impossibile caricare testo: '+err.message;window.GuitarAppReady?.fail('Karaoke non caricato: '+err.message);}}
+  }catch(err){if(current===song)$('karaoke-status').textContent='Impossibile caricare testo: '+err.message;}
 }
 function syncChords(){
   if(!current)return;

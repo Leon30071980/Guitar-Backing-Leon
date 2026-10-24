@@ -27,7 +27,7 @@
     }
     const usable=()=>Boolean(audio.currentSrc||audio.getAttribute('src'));
     function update(){
-      const active=usable();const allowed=active && Boolean(window.GuitarAppReady?.isReady());const playing=active&&!audio.paused&&!audio.ended;
+      const active=usable();const playing=active&&!audio.paused&&!audio.ended;
       const len=duration();const t=clamp(Number(audio.currentTime)||0,0,len||Number(audio.currentTime)||0);
       for(const toolbar of transports){
         const play=toolbar.querySelector('.section-play');
@@ -35,7 +35,7 @@
         const slider=toolbar.querySelector('.section-seek');
         const clock=toolbar.querySelector('.section-clock');
         const total=toolbar.querySelector('.section-duration');
-        play.disabled=!allowed;stop.disabled=slider.disabled=!active;
+        play.disabled=stop.disabled=slider.disabled=!active;
         play.textContent=playing?'❚❚ Pausa':'▶ Play';
         play.setAttribute('aria-label',playing?'Pausa':'Riproduci il brano');
         clock.textContent=fmt(t);total.textContent=fmt(len);
@@ -53,7 +53,7 @@
     }
     for(const toolbar of transports){
       toolbar.querySelector('.section-play').addEventListener('click',()=>{
-        if(audio.paused||audio.ended){if(!window.GuitarAppReady?.isReady())return;audio.play().catch(()=>{});}else audio.pause();update();
+        if(audio.paused||audio.ended)audio.play().catch(()=>{});else audio.pause();update();
       });
       toolbar.querySelector('.section-stop').addEventListener('click',()=>{
         audio.pause();if(usable())audio.currentTime=0;onSeek();update();
@@ -151,7 +151,6 @@
         if(['pause','ended'].includes(event)&&frame){cancelAnimationFrame(frame);frame=0;}
       });
     });
-    document.addEventListener('gbl-readiness-change',update);
     queueMicrotask(update);
     return {update,closeExpanded,isExpanded:()=>Boolean(expanded)};
   }

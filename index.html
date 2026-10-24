@@ -10,27 +10,31 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.19.10" rel="stylesheet"/>
+<link href="./style.css?v=2.21.4" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.19.10"></script>
-<script defer="" src="./karaoke.js?v=2.19.10"></script>
-<script defer="" src="./screen_wake.js?v=2.19.10"></script>
-<script defer="" src="./transport_ui.js?v=2.19.10"></script>
-<script defer="" src="./continuous_mixer.js?v=2.19.10"></script>
-<script defer="" src="./ui_support.js?v=2.19.10"></script>
-<script defer="" src="./app.js?v=2.19.10"></script>
+<script defer="" src="./chord_tools.js?v=2.19.0"></script>
+<script defer="" src="./karaoke.js?v=2.21.4"></script>
+<script defer="" src="./transport_ui.js?v=2.19.0"></script>
+<script defer="" src="./continuous_mixer.js?v=2.19.0"></script>
+<script defer="" src="./app.js?v=2.21.4"></script>
+
+
 </head>
 <body>
 <main class="shell">
 <header>
-<div><div class="eyebrow">STUDIO MUSICALE PERSONALE</div><h1>Guitar <span>Backing Leon</span></h1><div class="gbl-version">VERSIONE 2.19.10</div></div>
+<div><div class="eyebrow">STUDIO MUSICALE PERSONALE</div><h1>Guitar <span>Backing Leon</span></h1></div>
 <button class="primary" id="google-btn">Accedi con Google</button>
 </header>
 <p id="notice" role="status">Acceda con Google per visualizzare la Sua libreria privata.</p>
 <section hidden="" id="dashboard">
 <section class="panel">
 <div class="section-head"><h2>Libreria musicale</h2><button class="secondary" id="refresh" type="button">Aggiorna ↻</button></div>
+<label class="gbl-library-sort-label">Ordina per <select id="library-sort" aria-label="Ordina libreria">
+<option value="title-asc">Titolo A–Z</option><option value="title-desc">Titolo Z–A</option>
+<option value="artist-asc">Artista A–Z</option><option value="artist-desc">Artista Z–A</option>
+</select></label>
 <div class="song-list" id="library"><p>Nessuna canzone.</p></div>
 </section>
 <section class="panel" hidden="" id="player-panel">
@@ -53,7 +57,6 @@
 <output class="section-duration">0:00</output>
 </div>
 </div></div><audio id="player" playsinline="" preload="metadata"></audio>
-<p class="gbl-readiness gbl-loading" id="playback-readiness" role="status" aria-live="polite">⏳ Preparazione del brano...</p>
 <p class="mixer-note" id="mixer-note" role="status">Preparazione mixer...</p>
 <div class="controls"><a download="base.mp3" href="#" id="download">↓ MP3</a></div>
 </section>
@@ -82,18 +85,13 @@
 <p class="hint">Accordi stimati automaticamente: verificarli a orecchio. Il simbolo — significa accordo non identificato. Il capotasto modifica solo le posizioni mostrate, non l’audio.</p>
 </section>
 <section class="panel karaoke-panel" hidden="" id="karaoke-panel">
-<div class="panel-heading"><h2>04 · Testo karaoke + accordi</h2><div class="karaoke-heading-actions">
-<div aria-label="Dimensione del testo karaoke" class="karaoke-zoom" role="group">
-<button aria-label="Riduci le parole" class="secondary" id="karaoke-zoom-out" type="button">A−</button>
-<button aria-label="Ripristina dimensione testo al 100 per cento" class="secondary karaoke-zoom-reset" id="karaoke-zoom-reset" type="button">100%</button>
-<button aria-label="Ingrandisci le parole" class="secondary" id="karaoke-zoom-in" type="button">A+</button>
-</div>
-<button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div></div>
+<div class="panel-heading"><h2>04 · Testo karaoke + accordi</h2><button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div>
 
 <div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input id="lyrics-offset" max="5" min="-5" step="0.1" type="range" value="0"/><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div>
 <p class="hint" hidden="" id="sync-audio-check" role="status"></p>
 <p class="hint" id="karaoke-status">Caricamento testo...</p>
 <div class="karaoke-lines" id="karaoke-lines"></div>
+<p class="hint">Le correzioni importate tramite A&S si eseguono dal programma PC e sono disponibili qui dopo la sincronizzazione con Google Drive.</p>
 <p class="hint">Gli accordi seguono la musica anche nelle introduzioni e negli assoli. Le pause brevi non creano righe separate. Per correggere parole e tempi utilizzi l'app Windows.</p>
 </section>
 <section class="panel">
@@ -112,7 +110,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </section>
 </section>
-<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.19.10</span></footer>
+<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.21.4</span></footer>
 </main>
 </body>
 </html>
