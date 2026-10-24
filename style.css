@@ -456,3 +456,19 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
 }
 #karaoke-panel .karaoke-fixed-line.karaoke-next .karaoke-word-above .karaoke-time-chord{opacity:1}
 #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-pair{display:inline-flex}
+
+
+/* v2.21.7 — controllo schermo sempre acceso su Safari iOS e Chrome Android */
+.gbl-header-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;min-width:0}
+.gbl-header-tools button{min-height:42px}
+.gbl-wake-toggle{border:1px solid #3f7a70;border-radius:10px;background:#193e37;color:#b6ffe8;font-family:inherit;font-size:13px;line-height:1.2;font-weight:700;cursor:pointer;padding:10px 13px;white-space:nowrap}
+.gbl-wake-toggle[data-state="active"]{background:#175f4d;border-color:#4bd2aa;color:#e2fff4}
+.gbl-wake-toggle[data-state="off"]{background:#253244;border-color:#516276;color:#d3dce8}
+.gbl-wake-toggle[data-state="waiting"]{border-color:#577487;background:#253d4a;color:#d7ecf5}
+.gbl-wake-toggle[data-state="unavailable"]{background:#513a2e;border-color:#b18e5f;color:#ffe4b3}
+.gbl-wake-toggle:focus-visible{outline:2px solid #76e1cc;outline-offset:3px}
+.gbl-wake-message{font-size:12px;color:#ffe4b3;border:1px solid #775b40;background:#392b2a;padding:8px 12px;border-radius:8px;margin:-3px 0 12px}
+@media(max-width:550px){
+  .gbl-header-tools{width:100%;justify-content:stretch}
+  .gbl-header-tools button{flex:1 1 0;min-width:0;padding:10px 6px;font-size:12px;white-space:normal}
+}

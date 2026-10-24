@@ -10,7 +10,7 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.21.6" rel="stylesheet"/>
+<link href="./style.css?v=2.21.7" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
 <script defer="" src="./chord_tools.js?v=2.19.0"></script>
@@ -18,6 +18,7 @@
 <script defer="" src="./karaoke.js?v=2.21.5"></script>
 <script defer="" src="./transport_ui.js?v=2.19.0"></script>
 <script defer="" src="./continuous_mixer.js?v=2.19.0"></script>
+<script defer="" src="./screen_wake.js?v=2.21.7"></script>
 <script defer="" src="./app.js?v=2.21.5"></script>
 
 
@@ -26,8 +27,12 @@
 <main class="shell">
 <header>
 <div><div class="eyebrow">STUDIO MUSICALE PERSONALE</div><h1>Guitar <span>Backing Leon</span></h1></div>
+<div class="gbl-header-tools">
+<button class="gbl-wake-toggle" id="screen-wake-toggle" type="button" aria-pressed="true" title="Mantieni il display acceso finché l'app è visibile">☀ Schermo ON</button>
 <button class="primary" id="google-btn">Accedi con Google</button>
+</div>
 </header>
+<p class="gbl-wake-message" id="screen-wake-message" role="status" aria-live="polite" hidden></p>
 <p id="notice" role="status">Acceda con Google per visualizzare la Sua libreria privata.</p>
 <section hidden="" id="dashboard">
 <section class="panel">
@@ -116,7 +121,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </section>
 </section>
-<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.21.6</span></footer>
+<footer>File privati su Google Drive · Elaborazione AI gratuita sul PC · Nessun server musicale esterno · <span id="web-build">Web 2.21.7</span></footer>
 </main>
 </body>
 </html>
