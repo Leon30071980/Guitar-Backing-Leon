@@ -369,7 +369,7 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
 /* Porting leggio 2.21.4 a iPhone / GitHub per ancore A&S */
 #karaoke-panel .karaoke-follow{position:relative;top:auto;margin-bottom:10px}
 #karaoke-panel .karaoke-fixed-score{
-  display:grid;grid-template-rows:70px minmax(112px,auto) 70px;row-gap:9px;
+  display:grid;grid-template-rows:110px minmax(112px,auto) 110px;row-gap:9px;
   overflow:hidden;min-width:0;
 }
 #karaoke-panel .karaoke-fixed-line{
@@ -379,7 +379,7 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
   opacity:1;transition:none;background:#142032;
 }
 #karaoke-panel .karaoke-fixed-line.karaoke-prev{
-  display:block;grid-row:1;opacity:.65;height:70px;overflow:hidden;
+  display:block;grid-row:1;opacity:.72;height:110px;overflow:hidden;
 }
 #karaoke-panel .karaoke-fixed-line.line-current{
   display:block;grid-row:2;opacity:1;
@@ -388,7 +388,7 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
   padding:11px 12px;outline:none;
 }
 #karaoke-panel .karaoke-fixed-line.karaoke-next{
-  display:block;grid-row:3;opacity:.82;height:70px;overflow:hidden;
+  display:block;grid-row:3;opacity:.88;height:110px;overflow:hidden;
 }
 #karaoke-panel .karaoke-fixed-label{
   font-size:.68rem;font-weight:750;color:#97b9bd;
@@ -446,5 +446,13 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
 #karaoke-panel .karaoke-word-above:empty{min-height:25px}
 #karaoke-panel .karaoke-word-above .karaoke-time-chord{font-size:calc(.76rem * var(--gbl-lyric-scale,1));padding:2px 4px;max-width:100%}
 #karaoke-panel .karaoke-word-pair>.karaoke-time-word{white-space:nowrap;max-width:100%}
-#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above{display:none}
+/* 2.21.6: preview degli accordi visibile su tutti i versi del leggio.
+   Anche il verso successivo presenta subito gli accordi sopra le parole;
+   rimane evidenziato solo quello effettivamente in riproduzione. */
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above{display:flex}
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above .karaoke-time-chord{
+  font-size:calc(.69rem * var(--gbl-lyric-scale,1));padding:2px 4px;
+  opacity:.88;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-next .karaoke-word-above .karaoke-time-chord{opacity:1}
 #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-pair{display:inline-flex}
