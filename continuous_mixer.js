@@ -1,5 +1,5 @@
 'use strict';
-/* Guitar Backing Leon 2.17.1 — mixer iOS con UN SOLO orologio audio.
+/* Guitar Backing Leon 2.21.10 — mixer iOS/Android con UN SOLO orologio audio.
  * Tutti e quattro i mix sono decodificati in AudioBuffer e riprodotti
  * contemporaneamente dallo stesso AudioContext. Cambiare mix varia
  * soltanto i GainNode: nessun <audio> secondario, seek, pausa o riallineamento.
@@ -7,12 +7,14 @@
  */
 window.GuitarContinuousMixer = (() => {
   const MODES = ['no_guitar','full','no_vocals','no_guitar_no_vocals'];
-  const MAX_DECODED_BYTES = 450 * 1024 * 1024;
+  // Limite prudenziale. Il browser può imporre restrizioni inferiori, soprattutto su iOS.
+  const MAX_DECODED_BYTES = 600 * 1024 * 1024;
   const FADE_SECONDS = 0.022;
   function attach(master, onError = () => {}) {
     let ctx = null, masterNode = null, masterGain = null, outputGain = null;
     let buffers = new Map(), voices = new Map();
     let ready = false, active = false, selected = 'no_guitar', serial = 0;
+    let lastError = '';
     let playGeneration = 0;
 
     function ensureContext() {
@@ -84,6 +86,7 @@ window.GuitarContinuousMixer = (() => {
       active = false;
       ready = false;
       selected = 'no_guitar';
+      lastError = '';
       stopVoices();
       buffers.clear();
       if (masterGain && ctx) masterGain.gain.setValueAtTime(1, ctx.currentTime);
@@ -105,7 +108,9 @@ window.GuitarContinuousMixer = (() => {
           if (serial !== generation) return false;
           size += decoded.length * decoded.numberOfChannels * 4;
           if (size > MAX_DECODED_BYTES) {
-            throw Error('Brano troppo lungo per il mixer continuo su questo dispositivo. La base rimane riproducibile.');
+            const usedMiB = Math.ceil(size / (1024 * 1024));
+            const maxMiB = Math.floor(MAX_DECODED_BYTES / (1024 * 1024));
+            throw Error(`Audio decodificato: almeno ${usedMiB} MiB, limite ${maxMiB} MiB. Il mixer non è disponibile, ma la base rimane riproducibile.`);
           }
           loaded.set(key, decoded);
         }
@@ -118,7 +123,11 @@ window.GuitarContinuousMixer = (() => {
         ready = true;
         return true;
       } catch (e) {
-        if (generation === serial) { reset(); onError('Mixer iPhone: ' + e.message); }
+        if (generation === serial) {
+          reset();
+          lastError = 'Mixer non disponibile: ' + (e?.message || String(e));
+          onError(lastError);
+        }
         return false;
       }
     }
@@ -176,6 +185,7 @@ window.GuitarContinuousMixer = (() => {
     return {
       prepare, select, reset,
       get ready() { return ready; },
+      get error() { return lastError; },
       get active() { return active; },
       get mode() { return selected; },
     };

@@ -109,8 +109,8 @@ function updateMixer(){
   v.setAttribute('aria-label',vocalsEnabled?'Voce attiva':'Voce disattivata');
   $('mixer-note').textContent=ok
     ? 'Mixer continuo pronto: ON/OFF immediati senza fermare il brano.'
-    : capable ? 'Preparazione delle combinazioni da Google Drive. Si può ascoltare durante il caricamento.'
-    : 'Mixer non disponibile per questo brano: deve essere rielaborato sul PC.';
+    : !capable ? 'Mixer non disponibile per questo brano: deve essere rielaborato sul PC.'
+    : continuousMixer.error || 'Preparazione delle combinazioni da Google Drive. Si può ascoltare durante il caricamento.';
 }
 function clearAudioCache(){
   continuousMixer.reset();
@@ -139,8 +139,15 @@ async function prepareMixer(song,serial){
     }));
     if(serial!==mixerSeq || current!==song)return;
     for(const pair of downloads){if(pair)urls[pair[0]]=pair[1];}
-    await continuousMixer.prepare(urls);
-    if(serial===mixerSeq && current===song){updateMixer();notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');}
+    const prepared = await continuousMixer.prepare(urls);
+    if(serial===mixerSeq && current===song){
+      updateMixer();
+      if(prepared && continuousMixer.ready){
+        notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');
+      }else{
+        notice(continuousMixer.error || 'Mixer non disponibile: preparazione delle tracce non riuscita.',true);
+      }
+    }
   }catch(err){if(serial===mixerSeq)notice('Mixer non pronto: '+err.message,true);}
 }
 async function switchMix(initial=false){
