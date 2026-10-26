@@ -118,12 +118,6 @@ function clearAudioCache(){
   for(const u of cachedAudio.values())URL.revokeObjectURL(u);
   cachedAudio.clear(); sourceUrl='';
 }
-function updateDownload(mode){
-  const id=availableMixes()[mode] || (mode==='no_guitar'?current?.audioFileId:null);
-  const url=cachedAudio.get(id);
-  $('download').href=url||'#';
-  $('download').download=(current?.name||'base').replace(/[\\/:*?"<>|]/g,'-').slice(0,70)+' - '+mode+'.mp3';
-}
 async function prepareMixer(song,serial){
   const mixes=availableMixes();
   if(Object.keys(mixes).length<4)return;
@@ -155,7 +149,7 @@ async function prepareMixer(song,serial){
 async function switchMix(initial=false){
   if(!current)return;
   if(!initial){
-    if(continuousMixer.select(requestedMix())){updateDownload(requestedMix());updateMixer();}
+    if(continuousMixer.select(requestedMix()))updateMixer();
     return;
   }
   const song=current, serial=++mixerSeq;
@@ -170,7 +164,6 @@ async function switchMix(initial=false){
     sourceUrl=url;
     player.src=url;
     player.load();
-    updateDownload('no_guitar');
     notice('Base pronta. Preparazione mixer in corso...');
     prepareMixer(song,serial);
   }catch(err){if(serial===mixerSeq){gblMixerFault=err.message;gblUpdateSongLoading();notice(err.message,true);}}
