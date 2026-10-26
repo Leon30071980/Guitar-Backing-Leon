@@ -472,3 +472,100 @@ body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
   .gbl-header-tools{width:100%;justify-content:stretch}
   .gbl-header-tools button{flex:1 1 0;min-width:0;padding:10px 6px;font-size:12px;white-space:normal}
 }
+
+
+/* 2.21.12 — Mobile leggio: barra fissa in alto, karaoke prioritario. */
+[hidden]{display:none!important}
+.shell{max-width:1020px}
+#dashboard{min-width:0}
+#player-panel.gbl-mixer-bar{
+  position:sticky;top:max(0px,env(safe-area-inset-top));z-index:120;
+  background:#101f30;border:1px solid #3b8478;
+  box-shadow:0 8px 26px rgba(0,0,0,.55);
+  padding:9px 12px;margin:8px 0 10px;border-radius:12px;
+}
+#player-panel .gbl-track-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.86rem;color:#e5fff8;max-width:100%;margin:0 0 4px}
+#player-panel .transport-home{margin:2px 0 3px!important;min-height:0!important}
+#player-panel #global-transport{margin:0!important;max-width:100%;padding:7px 8px;gap:6px}
+body.gbl-transport-docked #global-transport:not(.gbl-expanded-transport){
+  position:static!important;top:auto!important;left:auto!important;
+  transform:none!important;z-index:auto!important;width:100%!important;
+  box-shadow:none!important;border:0!important;margin:0!important;
+}
+.panel.gbl-fullscreen > #global-transport{
+  position:sticky!important;top:var(--gbl-expand-head-h,64px)!important;
+  z-index:24!important;width:100%!important;
+}
+.gbl-song-loading{font-size:.78rem;line-height:1.25;padding:5px 8px;border-radius:7px;background:#4c3912;color:#ffe4a6;margin:4px 0}
+.gbl-song-loading[data-state=ready]{background:#164535;color:#b5f6d5}
+.gbl-song-loading[data-state=warning]{background:#582f32;color:#ffe2e2}
+#player-panel .mixer-note{font-size:.68rem;line-height:1.2;opacity:.8;margin:3px 0}
+#player-panel .controls{margin:1px 0 0;font-size:.7rem}
+#player-panel .controls a{padding:1px 4px;display:inline-block}
+#library-panel{padding:12px 15px}
+#library-panel .section-head{gap:8px;flex-wrap:wrap;margin:0}
+#library-panel h2{font-size:1.05rem;margin:0;flex:1}
+#library-toggle{min-height:34px;padding:6px 10px;font-size:.8rem;white-space:nowrap}
+#library-content{margin-top:8px}
+#karaoke-panel{padding:13px}
+#karaoke-panel .panel-heading{margin-bottom:5px}
+#karaoke-panel h2{font-size:1.05rem}
+#karaoke-panel .karaoke-lines{max-height:min(69vh,700px);min-height:250px}
+#karaoke-panel .karaoke-time-word,#karaoke-panel .karaoke-follow-now,
+#karaoke-panel .karaoke-follow-next,#karaoke-panel .karaoke-instrumental-label{
+  text-transform:uppercase;
+}
+#karaoke-panel .gbl-score-controls{margin:4px 0 6px;padding:5px 7px;gap:6px;border-radius:8px}
+#karaoke-panel .gbl-score-controls label{display:inline-flex;flex:1 1 auto;min-width:0;flex-wrap:nowrap;gap:5px;font-size:.73rem}
+#karaoke-panel .gbl-score-controls select{min-height:32px;padding:4px 5px;min-width:0;font-size:.8rem}
+.gbl-offset-details{margin:4px 0 7px;border:1px solid #354f62;border-radius:8px;padding:5px 9px;font-size:.76rem;color:#c4dbde}
+.gbl-offset-details summary{cursor:pointer;list-style-position:inside;font-weight:700}
+.gbl-offset-details .lyrics-offset-controls{margin:6px 0 2px;padding:6px 2px;gap:6px;border:0}
+.gbl-offset-details .lyrics-offset-controls input[type=range]{min-width:70px}
+#chords-panel{padding:12px 13px}
+#chords-panel .panel-heading{margin-bottom:4px}
+#chords-panel h2{font-size:1.02rem}
+.gbl-chords-details{border:0;margin:0}
+.gbl-chords-details > summary{cursor:pointer;font-size:.78rem;color:#b6e4d9;font-weight:700;padding:3px 4px}
+.gbl-chords-details[open] > summary{margin-bottom:8px}
+#chords-panel .hint{font-size:.7rem;margin:6px 0}
+#chords-panel .chords{max-height:240px;overflow-y:auto}
+#karaoke-panel .karaoke-status{font-size:.75rem}
+.gbl-wake-message{font-size:.73rem;margin:2px 0}
+header{padding-bottom:7px}
+@media(max-width:620px){
+ .shell{width:calc(100% - 14px);padding-top:8px}
+ .panel{padding:11px}
+ #player-panel.gbl-mixer-bar{padding:7px 8px;top:max(0px,env(safe-area-inset-top));margin:4px 0 7px}
+ #player-panel #global-transport{padding:5px 6px;gap:3px}
+ #global-transport .section-play,#global-transport .section-stop,#global-transport .stem-toggle{min-height:36px!important;font-size:12px}
+ #global-transport .section-timeline{gap:6px}
+ #karaoke-panel .karaoke-lines{max-height:70vh;min-height:290px}
+ #karaoke-panel .karaoke-time-word{font-size:calc(1.12rem * var(--gbl-lyric-scale,1))}
+ #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{font-size:calc(.90rem * var(--gbl-lyric-scale,1))}
+ #karaoke-panel .gbl-score-controls{flex-wrap:nowrap}
+ #karaoke-panel .gbl-score-controls label{font-size:.66rem;flex:1 1 50%;}
+ #karaoke-panel .gbl-score-controls select{max-width:100%;font-size:.7rem;padding:3px}
+ #chords-panel .panel-heading .section-fullscreen,#karaoke-panel .panel-heading .section-fullscreen{min-height:32px;padding:5px 6px;font-size:.7rem}
+ footer{margin:12px 0 0;font-size:.68rem}
+}
+
+/* Pannelli secondari chiusi fino a quando richiesti. */
+.gbl-secondary-details{margin:10px 0;padding:10px 13px}
+.gbl-secondary-details>summary{cursor:pointer;font-size:.92rem;font-weight:750;color:#d8f3ed}
+.gbl-secondary-details[open]>summary{margin-bottom:9px}
+.gbl-secondary-details p{font-size:.77rem;line-height:1.4;margin:6px 0}
+.gbl-secondary-details .section-head h2{display:none}
+#library-panel .section-head{display:flex;flex-wrap:nowrap;gap:7px;align-items:center}
+#library-panel .section-head h2{font-size:.99rem;white-space:nowrap}
+#refresh{width:36px;min-width:36px;padding:6px;font-size:1rem}
+#library-toggle{flex:0 0 auto}
+@media(max-width:440px){
+ #library-panel{padding:9px 10px}
+ #library-panel .section-head h2{font-size:.89rem}
+ #library-toggle{padding:5px 8px;font-size:.72rem}
+ header h1{font-size:clamp(1.38rem,6vw,1.8rem)}
+ header .gbl-header-tools button{min-height:34px;padding:7px 10px;font-size:.78rem}
+}
+/* overflow-x:hidden creava un contenitore di scorrimento che disabilitava sticky su Safari/Chrome. */
+html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!important;overflow-y:visible!important}

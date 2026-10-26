@@ -107,6 +107,7 @@ function updateMixer(){
   g.setAttribute('aria-label',guitarEnabled?'Chitarre attive':'Chitarre disattivate');
   v.querySelector('.stem-state').textContent=vocalsEnabled?'ON':'OFF';
   v.setAttribute('aria-label',vocalsEnabled?'Voce attiva':'Voce disattivata');
+  gblUpdateSongLoading();
   $('mixer-note').textContent=ok
     ? 'Mixer continuo pronto: ON/OFF immediati senza fermare il brano.'
     : !capable ? 'Mixer non disponibile per questo brano: deve essere rielaborato sul PC.'
@@ -141,6 +142,7 @@ async function prepareMixer(song,serial){
     for(const pair of downloads){if(pair)urls[pair[0]]=pair[1];}
     const prepared = await continuousMixer.prepare(urls);
     if(serial===mixerSeq && current===song){
+      gblMixerFault=prepared?'':continuousMixer.error||'Mixer non disponibile';
       updateMixer();
       if(prepared && continuousMixer.ready){
         notice('Mixer continuo pronto: nessuna pausa nei cambi di voce e chitarra.');
@@ -148,7 +150,7 @@ async function prepareMixer(song,serial){
         notice(continuousMixer.error || 'Mixer non disponibile: preparazione delle tracce non riuscita.',true);
       }
     }
-  }catch(err){if(serial===mixerSeq)notice('Mixer non pronto: '+err.message,true);}
+  }catch(err){if(serial===mixerSeq){gblMixerFault='Mixer non pronto: '+err.message;gblUpdateSongLoading();notice(gblMixerFault,true);}}
 }
 async function switchMix(initial=false){
   if(!current)return;
@@ -158,7 +160,7 @@ async function switchMix(initial=false){
   }
   const song=current, serial=++mixerSeq;
   const id=availableMixes().no_guitar || song.audioFileId;
-  if(!id){notice('La base audio non è disponibile.',true);return;}
+  if(!id){gblMixerFault='Base audio non disponibile';gblUpdateSongLoading();notice(gblMixerFault,true);return;}
   const player=$('player');
   player.pause();
   try {
@@ -171,7 +173,7 @@ async function switchMix(initial=false){
     updateDownload('no_guitar');
     notice('Base pronta. Preparazione mixer in corso...');
     prepareMixer(song,serial);
-  }catch(err){if(serial===mixerSeq)notice(err.message,true);}
+  }catch(err){if(serial===mixerSeq){gblMixerFault=err.message;gblUpdateSongLoading();notice(err.message,true);}}
 }
 $('toggle-guitar').addEventListener('click',()=>{guitarEnabled=!guitarEnabled;switchMix();});
 $('toggle-vocals').addEventListener('click',()=>{vocalsEnabled=!vocalsEnabled;switchMix();});
@@ -252,6 +254,30 @@ async function refreshAll(){if(refreshing)return;refreshing=true;try{
 } catch(err){notice(err.message,true);} finally{refreshing=false;}}
 $('refresh').addEventListener('click',refreshAll);
 const gblLibrarySort = $('library-sort');
+// Libreria compatta dopo la scelta del brano, riapribile in qualunque momento.
+const gblLibraryContent=$('library-content');
+const gblLibraryToggle=$('library-toggle');
+function gblSetLibraryOpen(open){
+  gblLibraryContent.hidden=!open;
+  gblLibraryToggle.setAttribute('aria-expanded',String(open));
+  gblLibraryToggle.textContent=open?'▴ Riduci':'▾ Libreria';
+}
+gblLibraryToggle.addEventListener('click',()=>gblSetLibraryOpen(gblLibraryContent.hidden));
+// Stato reale del brano: la presenza della base non equivale a mixer pronto.
+let gblAudioLoaded=false;
+let gblMixerFault='';
+function gblUpdateSongLoading(){
+  const el=$('song-loading');if(!el||!current)return;
+  const hasMixes=Object.keys(current.tracks||{}).length>=4;
+  const isReady=Boolean(continuousMixer.ready);
+  const message=gblMixerFault || (!gblAudioLoaded?'Caricamento audio…':
+    isReady?'✓ Brano e mixer pronti':hasMixes?'Audio pronto · caricamento mixer…':'Audio pronto · mixer non disponibile');
+  el.textContent=message;
+  el.dataset.state=gblMixerFault||(!hasMixes&&gblAudioLoaded)?'warning':gblAudioLoaded&&isReady?'ready':'loading';
+}
+$('player').addEventListener('canplay',()=>{gblAudioLoaded=true;gblUpdateSongLoading();});
+$('player').addEventListener('error',()=>{if(current){gblMixerFault='Audio non disponibile';gblUpdateSongLoading();}});
+
 const gblCollator = new Intl.Collator('it',{numeric:true,sensitivity:'base'});
 try{gblLibrarySort.value=localStorage.getItem('gbl-web-library-sort')||'title-asc';}catch(_){}
 function gblSongParts(song){
@@ -288,6 +314,8 @@ function renderChords(chords){
   updateCapo();
 }
 async function openSong(song){
+  gblSetLibraryOpen(false);
+  gblAudioLoaded=false;gblMixerFault='';
   $('player-panel').hidden=false;
   $('chords-panel').hidden=false;
   $('track-name').textContent=song.name||'Brano';
@@ -295,7 +323,7 @@ async function openSong(song){
   ++mixerSeq;
   $('player').pause();
   clearAudioCache();
-  current=song;guitarEnabled=false;vocalsEnabled=true;
+  current=song;guitarEnabled=false;vocalsEnabled=true;gblUpdateSongLoading();
   $('chord-engine-source').textContent = (song.chord_source||'').startsWith('guitar+mix')
     ? 'Analisi dalla chitarra isolata; accordi indicativi.'
     : song.chord_source === 'corretto-manualmente' ? 'Accordi con correzioni manuali.'
@@ -420,7 +448,7 @@ async function cloudSaveIndex(index){
 cloudTrash.addEventListener('click',async()=>{
   const selected=selectedCloudItems();if(!selected.length)return;
   if(!confirm(`Spostare nel Cestino ${selected.length} elemento/i? Sul PC i file resteranno salvati.`))return;
-  const phrase=prompt('Scriva CESTINO per confermare');if(phrase!=='CESTINO')return;
+  if(!confirm('Seconda conferma: procedere davvero con lo spostamento nel Cestino Google Drive?'))return;
   cloudTrash.disabled=true;cloudStatus.textContent='Spostamento nel Cestino...';
   try{
     // Rileggiamo l'indice prima di modificare la libreria. Evitare la pulizia mentre il PC sincronizza.
@@ -457,7 +485,7 @@ cloudTrash.addEventListener('click',async()=>{
       latest.deletedSongIds=[...new Set([...(latest.deletedSongIds||[]),...songIdsToRemove])].slice(-3000);
       await cloudSaveIndex(latest);
     }
-    if(current && songIdsToRemove.has(String(current.id))){$('player').pause();current=null;$('player-panel').hidden=true;$('chords-panel').hidden=true;$('karaoke-panel').hidden=true;clearAudioCache();}
+    if(current && songIdsToRemove.has(String(current.id))){$('player').pause();current=null;$('player-panel').hidden=true;$('chords-panel').hidden=true;$('karaoke-panel').hidden=true;clearAudioCache();gblSetLibraryOpen(true);}
     cloudStatus.textContent='Spostamento riuscito. L’audio locale sul PC resta disponibile.';
     await refreshAll();await cloudInventory();
   }catch(err){cloudStatus.textContent='Pulizia parziale o non riuscita: '+err.message+' Aggiorni l’elenco prima di riprovare.';}
