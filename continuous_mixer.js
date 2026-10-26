@@ -16,6 +16,7 @@ window.GuitarContinuousMixer = (() => {
     let ready = false, active = false, selected = 'no_guitar', serial = 0;
     let lastError = '';
     let playGeneration = 0;
+    let timing = null; // Istante di avvio reale delle voci Web Audio
 
     function ensureContext() {
       if (!ctx) {
@@ -26,6 +27,7 @@ window.GuitarContinuousMixer = (() => {
       return ctx;
     }
     function stopVoices() {
+      timing = null;
       ++playGeneration;
       for (const {node, gain} of voices.values()) {
         try { node.stop(); } catch (_) {}
@@ -69,6 +71,7 @@ window.GuitarContinuousMixer = (() => {
         node.start(when, Math.min(offset, node.buffer.duration - 0.005));
         voices.set(key, {node, gain});
       }
+      timing = {offset, when, rate, duration};
       if (masterGain) masterGain.gain.setValueAtTime(0, ctx.currentTime);
     }
     function ensureMasterRoute() {
@@ -181,9 +184,16 @@ window.GuitarContinuousMixer = (() => {
     master.addEventListener('volumechange', () => {
       if (active && outputGain && ctx) outputGain.gain.setValueAtTime(volume(), ctx.currentTime);
     });
+    // L'orologio delle voci Web Audio e' piu' fedele al suono ascoltato
+    // dell'audio HTML (mutato durante il mixer). Non sposta i file ne' i dati.
+    function getPlaybackTime(){
+      if(!active || !ready || !ctx || ctx.state!=='running' || !voices.size || !timing)return null;
+      const {offset,when,rate,duration}=timing;
+      return Math.max(0,Math.min(duration,offset+Math.max(0,ctx.currentTime-when)*rate));
+    }
     // Nessun riallineamento periodico: i 4 mix condividono lo STESSO orologio.
     return {
-      prepare, select, reset,
+      prepare, select, reset, getPlaybackTime,
       get ready() { return ready; },
       get error() { return lastError; },
       get active() { return active; },

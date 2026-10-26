@@ -569,3 +569,22 @@ header{padding-bottom:7px}
 }
 /* overflow-x:hidden creava un contenitore di scorrimento che disabilitava sticky su Safari/Chrome. */
 html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!important;overflow-y:visible!important}
+
+/* Versione 2.23 — zoom accessibile su telefono e tablet. Usa la stessa variabile del PC. */
+#karaoke-panel > .panel-heading{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+#karaoke-panel > .panel-heading h2{flex:1 1 180px;margin:0}
+#karaoke-panel .karaoke-heading-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:7px;margin-left:auto}
+#karaoke-panel .karaoke-zoom{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto}
+#karaoke-panel .karaoke-zoom button{min-width:39px;min-height:38px;padding:7px 8px;border-radius:8px;font-weight:800;font-size:14px;touch-action:manipulation}
+#karaoke-panel .karaoke-zoom .karaoke-zoom-reset{min-width:48px;font-size:12px;color:#82edc8}
+#karaoke-panel .karaoke-zoom button:disabled{opacity:.4;cursor:default}
+#karaoke-panel .karaoke-time-word{font-size:calc(1.05rem * var(--gbl-lyric-scale,1))}
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{font-size:calc(.87rem * var(--gbl-lyric-scale,1))}
+#karaoke-panel .karaoke-word-above .karaoke-time-chord{font-size:calc(.76rem * var(--gbl-lyric-scale,1))}
+@media(max-width:620px){
+ #karaoke-panel > .panel-heading h2{flex:1 1 100%;font-size:1rem}
+ #karaoke-panel .karaoke-heading-actions{width:100%;justify-content:space-between;margin-left:0}
+ #karaoke-panel .karaoke-zoom button{min-width:42px;min-height:39px}
+ #karaoke-panel .karaoke-time-word{font-size:calc(1.12rem * var(--gbl-lyric-scale,1))}
+ #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{font-size:calc(.9rem * var(--gbl-lyric-scale,1))}
+}

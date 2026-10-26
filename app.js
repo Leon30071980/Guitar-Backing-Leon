@@ -24,7 +24,7 @@ function syncScoreControls(){karaokeCapoSelect.value=capoSelect.value;}
 karaokeModeSelect.addEventListener('change',()=>{
  try{localStorage.setItem('gbl-karaoke-chord-mode',karaokeModeSelect.value);}catch{}
  karaokeView.render(karaokeWords,current?.chords||[],Number(current?.duration)||0);
- karaokeView.tick($('player').currentTime,false);
+ karaokeView.tick(gblMusicTime(),false);
 });
 karaokeCapoSelect.addEventListener('change',()=>{
  capoSelect.value=karaokeCapoSelect.value;
@@ -44,7 +44,7 @@ function updateCapo() {
     ? `Capotasto al tasto ${capoValue()}: posizioni da suonare. La tonalità della base resta invariata.`
     : 'Accordi originali: la tonalità della base non cambia.';
   karaokeView.render(karaokeWords,current?.chords||[],Number(current?.duration)||0);
-  karaokeView.tick($('player').currentTime,false);
+  karaokeView.tick(gblMusicTime(),false);
   syncChords();
 }
 capoSelect.addEventListener('change', () => {
@@ -61,7 +61,7 @@ function updateLyricsOffset(value){
   $('lyrics-offset').value=n;
   $('lyrics-offset-value').textContent=`${n>=0?'+':''}${n.toFixed(1)} s`;
   karaokeView.setOffset(n);
-  karaokeView.tick($('player').currentTime,false);
+  karaokeView.tick(gblMusicTime(),false);
 }
 $('lyrics-offset').addEventListener('input',()=>{
   const n=Number($('lyrics-offset').value);
@@ -93,6 +93,14 @@ const karaokeView=window.GuitarKaraoke.make({
 });
 const cachedAudio = new Map();
 const continuousMixer=window.GuitarContinuousMixer.attach($('player'),msg=>notice(msg,true));
+// PC e telefono leggono gli stessi dati. Con mixer Web Audio acceso il suono
+// proviene dai buffer del mixer, non dall'elemento HTML silenziato: usare il suo
+// tempo effettivo per evidenziare parola e accordo (fallback al lettore HTML).
+function gblMusicTime(){
+  const time=continuousMixer.getPlaybackTime?.();
+  return Number.isFinite(time)?time:(Number($('player').currentTime)||0);
+}
+
 
 function requestedMix(){ return guitarEnabled ? (vocalsEnabled ? 'full' : 'no_vocals') : (vocalsEnabled ? 'no_guitar' : 'no_guitar_no_vocals'); }
 function availableMixes(){return current?.tracks || {};}
@@ -348,7 +356,7 @@ async function loadKaraoke(song){
     try{const local=localStorage.getItem('gbl-lyrics-offset-'+song.id);if(local!==null)offset=Number(local)||0;}catch{}
     updateLyricsOffset(offset);
     karaokeView.render(karaokeWords,song.chords||[],Number(song.duration)||0);
-    karaokeView.tick($('player').currentTime,false);
+    karaokeView.tick(gblMusicTime(),false);
     $('karaoke-status').textContent=karaokeWords.length
       ? `${karaokeWords.length} parole · Lingua: ${result.language||'automatica'} · Clicchi una parola per ascoltare da quel punto.`
       : 'Nessun testo riconosciuto per questo brano.';
@@ -356,7 +364,7 @@ async function loadKaraoke(song){
 }
 function syncChords(){
   if(!current)return;
-  const p=$('player'),t=p.currentTime||0;
+  const t=gblMusicTime();
   karaokeView.tick(t);
   const chords=current.chords||[];
   const idx=chords.findIndex(c=>t>=c.start&&t<c.end);

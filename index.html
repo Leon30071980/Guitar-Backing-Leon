@@ -10,22 +10,23 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.22" rel="stylesheet"/>
+<link href="./style.css?v=2.23" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.22"></script>
-<script defer="" src="./chord_extras.js?v=2.22"></script>
-<script defer="" src="./karaoke.js?v=2.22"></script>
-<script defer="" src="./transport_ui.js?v=2.22"></script>
-<script defer="" src="./continuous_mixer.js?v=2.22"></script>
-<script defer="" src="./screen_wake.js?v=2.22"></script>
-<script defer="" src="./app.js?v=2.22"></script>
+<script defer="" src="./chord_tools.js?v=2.23"></script>
+<script defer="" src="./chord_extras.js?v=2.23"></script>
+<script defer="" src="./karaoke.js?v=2.23"></script>
+<script defer="" src="./transport_ui.js?v=2.23"></script>
+<script defer="" src="./continuous_mixer.js?v=2.23"></script>
+<script defer="" src="./screen_wake.js?v=2.23"></script>
+<script defer="" src="./app.js?v=2.23"></script>
 </head>
 <body>
 <main class="shell">
 <header>
 <div><h1>Guitar <span>Backing Leon</span></h1></div>
 <div class="gbl-header-tools">
+<button type="button" class="gbl-wake-toggle" id="screen-wake-toggle" aria-pressed="true" title="Mantiene acceso lo schermo mentre l’app è visibile">☀ Schermo ON</button>
 <button class="primary" id="google-btn">Accedi con Google</button>
 </div>
 </header>
@@ -61,7 +62,12 @@
 <div class="song-list" id="library"><p>Nessuna canzone.</p></div>
 </div></section>
 <section class="panel karaoke-panel" hidden="" id="karaoke-panel">
-<div class="panel-heading"><h2>Testo karaoke + accordi</h2><button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div>
+<div class="panel-heading"><h2>Testo karaoke + accordi</h2>
+<div class="karaoke-heading-actions"><div class="karaoke-zoom" role="group" aria-label="Dimensione del testo karaoke">
+<button type="button" class="secondary" id="karaoke-zoom-out" aria-label="Riduci il testo">A−</button>
+<button type="button" class="secondary karaoke-zoom-reset" id="karaoke-zoom-reset" aria-label="Ripristina la dimensione al 100%">100%</button>
+<button type="button" class="secondary" id="karaoke-zoom-in" aria-label="Ingrandisci il testo">A+</button>
+</div><button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div></div>
 <p class="hint" hidden="" id="sync-audio-check" role="status"></p>
 <p class="hint" id="karaoke-status">Caricamento testo...</p>
 <div aria-label="Opzioni accordi pannello 04" class="gbl-score-controls" role="group">
@@ -107,7 +113,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </details>
 </section>
-<footer>Guitar Backing Leon · <span id="web-build">Web 2.22</span></footer>
+<footer>Guitar Backing Leon · <span id="web-build">Web 2.23</span></footer>
 </main>
 </body>
 </html>
