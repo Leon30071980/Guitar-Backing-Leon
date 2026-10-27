@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.45 — accordi temporali sopra le parole.
+/* Guitar Backing Leon 2.46 — accordi temporali sopra le parole.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -198,14 +198,27 @@
           // Mostra sul primo vocabolo anche l'accordo gia' in corso quando
           // inizia un verso, inclusa l'anteprima del verso successivo.
           // Non si genera un nuovo cambio: e' soltanto una ripetizione visiva.
+          // Non mostrare un accordo trascinato dal verso precedente se
+          // viene gia' sostituito nei primissimi istanti della nuova frase.
+          // Altrimenti compare un falso extra sopra la prima parola.
+          const firstNew=model.chords.find(c=>c.chord!=='N' &&
+            c.start>=segment.start-.0001 && c.start<segment.start+.18);
           if(carried>=0 && model.chords[carried].chord!=='N' &&
-             model.chords[carried].start<=segment.start+.04)markerIndices.push(carried);
+             model.chords[carried].start<=segment.start+.04 && !firstNew)
+            markerIndices.push(carried);
           model.chords.forEach((c,i)=>{
             if(instrumentalAt(c.start))return; // evita doppi marker nei versi
             if(c.start>=segment.start-.0001 && c.start<bridgeEnd-.0001)markerIndices.push(i);
           });
         }
-        const unique=[...new Set(markerIndices)].sort((a,b)=>model.chords[a].start-model.chords[b].start);
+        const chronological=[...new Set(markerIndices)].sort((a,b)=>
+          model.chords[a].start-model.chords[b].start || a-b);
+        // Due accordi con lo stesso identico inizio non possono essere suonati
+        // simultaneamente: la timeline stessa attiva solo l'ultimo evento.
+        // Nascondiamo nel LEGGIO i predecessori irraggiungibili, senza toccare
+        // i dati originali o gli editor. Altri cambi vicini restano visibili.
+        const unique=chronological.filter((idx,pos,all)=>!all.slice(pos+1).some(
+          other=>Math.abs(model.chords[other].start-model.chords[idx].start)<.015));
         const wordChords=new Map();
         unique.forEach(idx=>{
           const chord=model.chords[idx],label=String(formatChord(chord.chord)||'—');
@@ -237,7 +250,7 @@
               :locateWord(chord.start,carried===idx && chord.start < segment.start-.045);
             if(anchor){
               if(!wordChords.has(anchor.word.index))wordChords.set(anchor.word.index,[]);
-              wordChords.get(anchor.word.index).push({wrap,fraction:anchor.fraction});
+              wordChords.get(anchor.word.index).push({wrap,fraction:anchor.fraction,start:chord.start});
             }else bridgeMarkers.push(wrap);
           }
           // Conserviamo il riferimento all'accordo originale: al cambio
@@ -261,14 +274,38 @@
             btn.addEventListener('click',()=>isEditing()?onWordClick?.(word.index):onSeek?.(word.start));
             const pair=makeEl('span','karaoke-word-pair');
             const above=makeEl('span','karaoke-word-above');
+            // 2.46: NEVER stack chord changes vertically on a word. Several
+            // timestamps can legitimately fall inside the same sung syllable;
+            // show their *chronological order* in ONE horizontal run instead.
+            // Each chord remains a separate clickable/playback-aware event.
             const attached=wordChords.get(word.index)||[];
-            if(attached.length>1)above.style.minHeight=`${24*attached.length+1}px`;
+            if(attached.length>1){
+              above.classList.add('gbl-chord-run');
+              above.title='Cambi sulla stessa parola: segui gli accordi da sinistra a destra';
+            }
+            const rapid=attached.length>1 &&
+              (attached.length>=3 && attached[attached.length-1].start-attached[0].start<.8 ||
+               attached.length===2 && attached[1].start-attached[0].start<.16);
+            if(rapid){
+              above.classList.add('gbl-chord-rapid');
+              above.title='Attenzione: cambi eccessivamente ravvicinati; verificare la timeline musicale. Gli accordi originali non sono stati modificati.';
+            }
             attached.forEach(({wrap,fraction},n)=>{
               wrap.classList.add('gbl-anchored-chord');
               wrap.style.setProperty('--gbl-anchor-x',String(fraction));
-              wrap.style.setProperty('--gbl-anchor-level',String(n));
+              if(n>0){
+                const arrow=makeEl('span','gbl-chord-step','›');
+                arrow.setAttribute('aria-hidden','true');
+                above.append(arrow);
+              }
               above.append(wrap);
             });
+            if(rapid){
+              const caution=makeEl('span','gbl-chord-rapid-note','!');
+              caution.title='Cambi troppo rapidi: controllare gli accordi nell’editor';
+              caution.setAttribute('aria-label','Cambi rapidi da verificare');
+              above.append(caution);
+            }
             pair.append(above,btn);text.append(pair);
             wordEls.push({button:btn,word});
           });

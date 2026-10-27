@@ -766,3 +766,95 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
 .gbl-word-align-actions{display:flex;gap:8px;flex-wrap:wrap}
 .gbl-word-align-actions button{width:auto;max-width:100%;min-height:36px}
 @media(max-width:550px){.gbl-word-align-item{flex-wrap:wrap}.gbl-word-align-listen{margin-left:25px}}
+
+/* 2.46 — una SOLA fila leggibile di accordi per parola.
+   Il vecchio bottom: 24px * livello sovrapponeva Bm / D / Em e creava
+   ambiguità: ora i cambi stanno in ordine temporale separati da ›.
+   Il testo rimane sotto il rispettivo gruppo, anche sul verso successivo. */
+#karaoke-panel .karaoke-word-pair {
+  max-width:100%;
+  min-width:0;
+  width:max-content;
+}
+#karaoke-panel .karaoke-word-above,
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above {
+  display:flex!important;
+  position:relative;
+  align-items:center;
+  justify-content:center;
+  flex-direction:row;
+  flex-wrap:nowrap;
+  gap:3px;
+  box-sizing:border-box;
+  width:max-content;
+  max-width:100%;
+  min-height:27px;
+  margin:0 auto;
+  overflow:visible;
+}
+#karaoke-panel .karaoke-word-above .gbl-anchored-chord,
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above .gbl-anchored-chord {
+  position:static!important;
+  display:inline-flex!important;
+  left:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  flex:0 0 auto;
+  white-space:nowrap;
+  z-index:auto;
+}
+#karaoke-panel .karaoke-word-above .gbl-chord-step {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  color:#77a9d1;
+  font-size:calc(.75rem * var(--gbl-lyric-scale,1));
+  line-height:1;
+  font-weight:900;
+  pointer-events:none;
+  padding:0 1px;
+}
+#karaoke-panel .karaoke-word-above.gbl-chord-run {
+  gap:2px;
+}
+#karaoke-panel .karaoke-word-above.gbl-chord-run .karaoke-time-chord {
+  padding-inline:3px;
+}
+/* Brani importati che contengono 5+ cambi nella medesima parola:
+   mostrare tutte le sigle in una striscia scorrevole, mai sovrapporle. */
+#karaoke-panel .karaoke-word-above.gbl-chord-run {
+  max-width:min(100%, calc(100vw - 55px));
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+}
+/* Con wrapping dei gruppi, il precedente e il successivo non vanno troncati. */
+#karaoke-panel .karaoke-fixed-line.karaoke-prev,
+#karaoke-panel .karaoke-fixed-line.karaoke-next {
+  max-height:none;
+  overflow:visible;
+}
+@media(max-width:600px){
+  #karaoke-panel .karaoke-word-above.gbl-chord-run .karaoke-time-chord {
+    padding:2px 2px;
+  }
+  #karaoke-panel .karaoke-word-above .gbl-chord-step {font-size:.7rem;}
+}
+
+/* 2.46 — le anomalie temporali sono segnalate, mai spacciate per accordi certi. */
+#karaoke-panel .gbl-chord-rapid-note {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  font-size:.63rem;
+  font-weight:900;
+  line-height:1;
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  color:#191f27;
+  background:#e5aa50;
+  cursor:help;
+}
