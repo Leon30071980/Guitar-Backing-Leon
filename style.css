@@ -735,3 +735,19 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
 #karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-chords > .gbl-chord-with-tip {
   flex:0 0 auto;
 }
+
+/* 2.44 — chords pinned within their timed words, no historic stale word_index. */
+#karaoke-panel .karaoke-word-pair {position:relative;overflow:visible;}
+#karaoke-panel .karaoke-word-above,
+#karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-word-above {
+  position:relative;display:block;overflow:visible;width:100%;min-height:29px;
+}
+#karaoke-panel .karaoke-word-above .gbl-anchored-chord {
+  position:absolute!important;display:inline-flex!important;
+  left:calc(var(--gbl-anchor-x,0) * 100%);
+  bottom:calc(var(--gbl-anchor-level,0) * 24px);
+  transform:translateX(-12%);white-space:nowrap;z-index:2;
+}
+#karaoke-panel .karaoke-word-above .gbl-anchored-chord .karaoke-time-chord {white-space:nowrap;}
+#karaoke-panel .karaoke-fixed-line.karaoke-next .gbl-anchored-chord {z-index:2;}
+#karaoke-panel .gbl-chord-word-align-status {margin-top:6px;}

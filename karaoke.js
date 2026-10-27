@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.16.2 — lettura continua da chitarrista.
+/* Guitar Backing Leon 2.44 — accordi temporali sopra le parole.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -170,7 +170,21 @@
         const carried=chordAt(model.chords,segment.start);
         const enteredDuringGap=carried>=0 && previous && model.chords[carried].start>previous.end+0.01;
         const markerIndices=[];
-        const anchoredWords=new Set(instrumental?[]:segment.words.map(w=>w.index));
+        function locateWord(time, isCarried=false){
+          if(!segment.words.length)return null;
+          if(isCarried)return {word:segment.words[0],fraction:0};
+          for(const w of segment.words){
+            if(w.end-w.start<.075)continue;
+            if(time>=w.start-.045 && time<w.end-.001)
+              return {word:w,fraction:Math.max(0,Math.min(.92,
+                (time-w.start)/Math.max(.075,w.end-w.start)))};
+          }
+          const future=segment.words.find(w=>w.end-w.start>=.075 && w.start>=time);
+          if(future && future.start-time<=.4)return {word:future,fraction:0};
+          const past=[...segment.words].reverse().find(w=>w.end-w.start>=.075 && w.end<=time);
+          if(past && time-past.end<=.12)return {word:past,fraction:.95};
+          return null;
+        }
         // La priorita' e' musicale: durante l'assolo contano i timestamp,
         // anche se l'importatore aveva associato l'accordo a un indice parola.
         const instrumentalAt=time=>model.segments.some(s=>s.type==='instrumental' &&
@@ -188,8 +202,7 @@
              model.chords[carried].start<=segment.start+.04)markerIndices.push(carried);
           model.chords.forEach((c,i)=>{
             if(instrumentalAt(c.start))return; // evita doppi marker nei versi
-            if(Number.isInteger(c.word_index) && anchoredWords.has(c.word_index))markerIndices.push(i);
-            else if(c.start>=segment.start-.0001 && c.start<bridgeEnd-.0001)markerIndices.push(i);
+            if(c.start>=segment.start-.0001 && c.start<bridgeEnd-.0001)markerIndices.push(i);
           });
         }
         const unique=[...new Set(markerIndices)].sort((a,b)=>model.chords[a].start-model.chords[b].start);
@@ -207,17 +220,12 @@
           else if(chord.start>=segment.end-.001 && chord.start<bridgeEnd-.001){
             bridgeMarkers.push(wrap);
           }else {
-            // A&S restituisce un indice esatto della parola. Per gli accordi AI
-            // privi di indice usiamo la parola temporalmente piu' vicina.
-            const anchored=Number.isInteger(chord.word_index)?
-              segment.words.find(w=>w.index===chord.word_index &&
-                Math.abs(w.start-chord.start)<Math.max(1.6,w.end-w.start+.4)):null;
-            const nearest=anchored || segment.words.reduce((best,w)=>
-              (!best || Math.abs(w.start-chord.start)<Math.abs(best.start-chord.start))?w:best,null);
-            if(nearest){
-              if(!wordChords.has(nearest.index))wordChords.set(nearest.index,[]);
-              wordChords.get(nearest.index).push(wrap);
-            }
+            const anchor=locateWord(chord.start,carried===idx &&
+              chord.start<segment.start-.045);
+            if(anchor){
+              if(!wordChords.has(anchor.word.index))wordChords.set(anchor.word.index,[]);
+              wordChords.get(anchor.word.index).push({wrap,fraction:anchor.fraction});
+            }else bridgeMarkers.push(wrap);
           }
           // Conserviamo il riferimento all'accordo originale: al cambio
           // di capotasto aggiorniamo direttamente le etichette nel DOM.
@@ -240,7 +248,14 @@
             btn.addEventListener('click',()=>isEditing()?onWordClick?.(word.index):onSeek?.(word.start));
             const pair=makeEl('span','karaoke-word-pair');
             const above=makeEl('span','karaoke-word-above');
-            for(const marker of wordChords.get(word.index)||[])above.append(marker);
+            const attached=wordChords.get(word.index)||[];
+            if(attached.length>1)above.style.minHeight=`${24*attached.length+1}px`;
+            attached.forEach(({wrap,fraction},n)=>{
+              wrap.classList.add('gbl-anchored-chord');
+              wrap.style.setProperty('--gbl-anchor-x',String(fraction));
+              wrap.style.setProperty('--gbl-anchor-level',String(n));
+              above.append(wrap);
+            });
             pair.append(above,btn);text.append(pair);
             wordEls.push({button:btn,word});
           });
