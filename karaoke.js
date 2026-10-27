@@ -35,10 +35,13 @@
       .sort((a,b)=>a.start-b.start);
     const last=Math.max(0,...words.map(w=>w.end),...chords.map(c=>c.end));
     const length=valid(duration)&&num(duration)>0?Math.max(num(duration),last):last;
-    const hasChordChange=(start,end)=>chords.some(c=>c.chord!=='N' && c.start>=start-.0001 && c.start<end-.0001);
+    const hasChordChange=(start,end)=>chords.filter(c=>c.chord!=='N' && c.start>=start-.0001 && c.start<end-.0001).length;
     const meaningfulGap=(start,end)=>{
       const length=end-start;
-      return length>=3.5 || (length>=.45 && hasChordChange(start,end));
+      // Una pausa breve con un solo cambio non deve oscurare l'ANTEPRIMA
+      // della frase successiva: il cambio e' mostrato nel ponte strumentale.
+      // Gli assoli e i veri intermezzi restano invece sezioni autonome.
+      return length>=5.0 || (length>=1.3 && hasChordChange(start,end)>=2);
     };
     const phrases=[];
     for(const w of words){
@@ -95,11 +98,10 @@
 
   // Il karaoke è un leggio a tre posizioni fisse: precedente / corrente / prossimo.
   // Mai scorrere il testo in funzione dei secondi. Solo i colori cambiano parola per parola.
-  function make({root,formatChord=(s=>s),onSeek,onWordClick,isEditing=()=>false}) {
+  function make({root,formatChord=(s=>s),onSeek,onWordClick,onChordClick,isEditing=()=>false}) {
     let model={segments:[],words:[],chords:[],duration:0};
     let lyricsOffset=0, originalWords=[],originalChords=[],originalDuration=0;
     let rows=[],wordEls=[],currentRow=-1,currentChord=-2,lastTickTime=0;
-    let nowEl=null,nextEl=null,untilEl=null,fillEl=null;
     const ZOOM_KEY='gbl-karaoke-zoom';
     const ZOOM_MIN=.8,ZOOM_MAX=2.2,ZOOM_STEP=.2;
     let lyricScale=1;
@@ -142,20 +144,7 @@
       });
       model=buildSegments(visualWords,chords,duration);
       rows=[];wordEls=[];currentRow=-1;currentChord=-2;
-      const follow=makeEl('div','karaoke-follow');
-      follow.setAttribute('aria-label','Accordo attuale e prossimo accordo');
-      const top=makeEl('div','karaoke-follow-top');
-      const block=makeEl('div','karaoke-follow-block');
-      block.append(makeEl('span','karaoke-follow-caption','ACCORDO ATTUALE'));
-      nowEl=makeEl('strong','karaoke-follow-now','—');block.append(nowEl);
-      const upcoming=makeEl('div','karaoke-follow-block karaoke-follow-secondary');
-      upcoming.append(makeEl('span','karaoke-follow-caption','PROSSIMO'));
-      nextEl=makeEl('strong','karaoke-follow-next','—');upcoming.append(nextEl);
-      untilEl=makeEl('span','karaoke-follow-until','');upcoming.append(untilEl);
-      top.append(block,upcoming);follow.append(top);
-      const rail=makeEl('div','karaoke-follow-rail');
-      fillEl=makeEl('span','karaoke-follow-fill');rail.append(fillEl);follow.append(rail);
-      root.append(follow);
+      // Solo leggio a tre righe: nessun riquadro separato attuale/prossimo.
       if(!model.segments.length){
         root.append(makeEl('p','karaoke-empty','Non sono ancora disponibili parole o accordi per questo brano.'));
         return;
@@ -166,6 +155,9 @@
       model.segments.forEach((segment,index)=>{
         const instrumental=segment.type==='instrumental';
         const previous=model.segments[index-1];
+        const following=model.segments[index+1];
+        const bridgeEnd=!instrumental && following?.type==='words' ? following.start : segment.end;
+        const bridgeMarkers=[];
         const stanzaBreak=!instrumental && previous?.type==='words' && segment.line-previous.line>1;
         const section=makeEl('section','karaoke-section karaoke-fixed-line '+(instrumental?'karaoke-instrumental':'karaoke-sung')+(stanzaBreak?' karaoke-stanza-start':''));
         const header=makeEl('div','karaoke-fixed-label',instrumental?`♪ ${segment.label}`:`VERSO ${segment.line+1}`);
@@ -189,13 +181,15 @@
             if(c.start>=segment.start-.0001 && c.start<segment.end-.0001)markerIndices.push(i);
           });
         }else{
-          if(carried>=0 && (index===0 || enteredDuringGap) &&
-             !instrumentalAt(model.chords[carried].start) &&
-             (!Number.isInteger(model.chords[carried].word_index)||anchoredWords.has(model.chords[carried].word_index)))markerIndices.push(carried);
+          // Mostra sul primo vocabolo anche l'accordo gia' in corso quando
+          // inizia un verso, inclusa l'anteprima del verso successivo.
+          // Non si genera un nuovo cambio: e' soltanto una ripetizione visiva.
+          if(carried>=0 && model.chords[carried].chord!=='N' &&
+             model.chords[carried].start<=segment.start+.04)markerIndices.push(carried);
           model.chords.forEach((c,i)=>{
             if(instrumentalAt(c.start))return; // evita doppi marker nei versi
             if(Number.isInteger(c.word_index) && anchoredWords.has(c.word_index))markerIndices.push(i);
-            else if(c.start>=segment.start-.0001 && c.start<segment.end-.0001)markerIndices.push(i);
+            else if(c.start>=segment.start-.0001 && c.start<bridgeEnd-.0001)markerIndices.push(i);
           });
         }
         const unique=[...new Set(markerIndices)].sort((a,b)=>model.chords[a].start-model.chords[b].start);
@@ -208,13 +202,16 @@
           wrap.append(btn);
           if(window.GuitarChordTools?.diagram && label!=='—')wrap.append(window.GuitarChordTools.diagram(label));
           btn.type='button';btn.title=`${label} · ${stamp(chord.start)} (${chord.start.toFixed(2)} s)`;
-          btn.addEventListener('click',()=>onSeek?.(chord.start));
+          btn.addEventListener('click',()=>isEditing() && onChordClick ? onChordClick(idx) : onSeek?.(chord.start));
           if(instrumental){strip.append(wrap);}
-          else {
+          else if(chord.start>=segment.end-.001 && chord.start<bridgeEnd-.001){
+            bridgeMarkers.push(wrap);
+          }else {
             // A&S restituisce un indice esatto della parola. Per gli accordi AI
             // privi di indice usiamo la parola temporalmente piu' vicina.
             const anchored=Number.isInteger(chord.word_index)?
-              segment.words.find(w=>w.index===chord.word_index):null;
+              segment.words.find(w=>w.index===chord.word_index &&
+                Math.abs(w.start-chord.start)<Math.max(1.6,w.end-w.start+.4)):null;
             const nearest=anchored || segment.words.reduce((best,w)=>
               (!best || Math.abs(w.start-chord.start)<Math.abs(best.start-chord.start))?w:best,null);
             if(nearest){
@@ -246,7 +243,14 @@
         }else{
           text.append(makeEl('span','karaoke-instrumental-label','♪ Intervallo musicale'));
         }
-        section.append(text);score.append(section);
+        section.append(text);
+        if(bridgeMarkers.length){
+          const bridge=makeEl('div','karaoke-bridge-chords');
+          bridge.append(makeEl('span','karaoke-bridge-label','♪'));
+          for(const marker of bridgeMarkers)bridge.append(marker);
+          section.append(bridge);
+        }
+        score.append(section);
         rows.push({section,segment,chordMarkers:markers,focusStart:focusStartForSegment(segment,previous,model.chords)});
       });
       tick(lastTickTime,false);
@@ -258,11 +262,27 @@
         button.classList.toggle('singing',t>=word.start&&t<word.end);
         button.classList.toggle('sung',t>=word.end);
       }
+      let rowIndex=-1;
+      for(let i=0;i<rows.length;i++){
+        if(rows[i].focusStart<=t+.0001)rowIndex=i;else break;
+      }
+      if(rowIndex<0&&rows.length)rowIndex=0;
+      const shifted=rowIndex!==currentRow;
+      if(shifted){
+        rows.forEach((row,i)=>{
+          row.section.classList.toggle('line-current',i===rowIndex);
+          row.section.classList.toggle('karaoke-prev',i===rowIndex-1);
+          row.section.classList.toggle('karaoke-next',i===rowIndex+1);
+          row.section.setAttribute('aria-hidden',Math.abs(i-rowIndex)>1?'true':'false');
+        });
+        currentRow=rowIndex;
+      }
       const idx=chordAt(model.chords,t);
-      if(idx!==currentChord){
+      if(idx!==currentChord||shifted){
         for(const row of rows)for(const marker of row.chordMarkers){
-          const active=marker.index===idx;
+          const active=marker.index===idx && row.section.classList.contains('line-current');
           marker.button.classList.toggle('current',active);
+          marker.button.setAttribute('aria-current',active?'true':'false');
           if(active){
             const strip=marker.button.closest('.karaoke-fixed-chords');
             if(strip && strip.scrollWidth>strip.clientWidth){
@@ -271,34 +291,6 @@
           }
         }
         currentChord=idx;
-      }
-      const chord=idx>=0?model.chords[idx]:null;
-      if(nowEl)nowEl.textContent=chord?String(formatChord(chord.chord)||'—'):'—';
-      let upcoming=null;
-      for(const candidate of model.chords){
-        if(candidate.start>t+.001&&candidate.chord!=='N'&&(!chord||candidate.chord!==chord.chord)){
-          upcoming=candidate;break;
-        }
-      }
-      if(nextEl)nextEl.textContent=upcoming?String(formatChord(upcoming.chord)||'—'):'—';
-      if(untilEl)untilEl.textContent=upcoming?`tra ${Math.max(0,upcoming.start-t).toFixed(1)} s`:'';
-      if(fillEl){
-        const progress=chord?100*clamp((t-chord.start)/Math.max(.001,chord.end-chord.start),0,1):0;
-        fillEl.style.width=`${progress.toFixed(1)}%`;
-      }
-      let rowIndex=-1;
-      for(let i=0;i<rows.length;i++){
-        if(rows[i].focusStart<=t+.0001)rowIndex=i;else break;
-      }
-      if(rowIndex<0&&rows.length)rowIndex=0;
-      if(rowIndex!==currentRow){
-        rows.forEach((row,i)=>{
-          row.section.classList.toggle('line-current',i===rowIndex);
-          row.section.classList.toggle('karaoke-prev',i===rowIndex-1);
-          row.section.classList.toggle('karaoke-next',i===rowIndex+1);
-          row.section.setAttribute('aria-hidden',Math.abs(i-rowIndex)>1?'true':'false');
-        });
-        currentRow=rowIndex;
       }
       // Intentional: no scrollTo(), no scrollLeft, no moving timeline.
     }
