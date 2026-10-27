@@ -634,3 +634,25 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
   #karaoke-panel .karaoke-fixed-line.line-current {min-height:96px;padding:7px 8px;}
   #karaoke-panel .karaoke-follow {padding:6px 8px 5px;margin-bottom:3px;}
 }
+
+/* 2.35 – Accordi disponibili anche negli intervalli strumentali e in anteprima. */
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-chords{
+  display:flex!important;flex-wrap:nowrap;justify-content:flex-start;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain;
+  gap:6px;min-height:34px;padding:4px 2px 6px;margin:2px 0 1px;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-chords .gbl-chord-with-tip{flex:0 0 auto;}
+#karaoke-panel .karaoke-instrumental-missing{font-size:.78rem;color:#a6b3c6;white-space:normal;}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-words{padding-top:2px;}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-instrumental-label{font-size:.75rem;}
+#karaoke-panel .karaoke-fixed-line.karaoke-prev.karaoke-instrumental,
+#karaoke-panel .karaoke-fixed-line.karaoke-next.karaoke-instrumental{overflow:hidden;}
+#karaoke-panel .karaoke-fixed-line.line-current.karaoke-instrumental{min-height:92px;}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-time-chord.current{
+  border-color:#49d9b2!important;background:#246659!important;color:#f3fff9!important;
+}
+
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-time-chord{
+  min-height:30px;min-width:42px;padding:4px 10px;
+  font-size:calc(.95rem * var(--gbl-lyric-scale,1));font-weight:800;
+}

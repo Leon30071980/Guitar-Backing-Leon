@@ -21,7 +21,9 @@
     const idx=lo-1;
     return idx>=0 && t<chords[idx].end+0.0001 ? idx : -1;
   }
-  // L'introduzione e gli assoli lunghi meritano una riga; una pausa di 3 s NO.
+  // Le sezioni strumentali hanno una timeline armonica indipendente dalle parole.
+  // Sono rese anche per pause brevi se vi sono cambi di accordo; nessun cambio
+  // puo' sparire solo perche' non esiste una parola a cui agganciarlo.
   function buildSegments(inputWords,inputChords,duration) {
     const words=(Array.isArray(inputWords)?inputWords:[]).map((w,index)=>({
       ...w,index,start:num(w.start),end:num(w.end),line:num(w.line)||0
@@ -33,26 +35,27 @@
       .sort((a,b)=>a.start-b.start);
     const last=Math.max(0,...words.map(w=>w.end),...chords.map(c=>c.end));
     const length=valid(duration)&&num(duration)>0?Math.max(num(duration),last):last;
+    const hasChordChange=(start,end)=>chords.some(c=>c.chord!=='N' && c.start>=start-.0001 && c.start<end-.0001);
+    const meaningfulGap=(start,end)=>{
+      const length=end-start;
+      return length>=3.5 || (length>=.45 && hasChordChange(start,end));
+    };
     const phrases=[];
     for(const w of words){
       const tail=phrases[phrases.length-1];
-      if(!tail || tail.line!==w.line){
+      // Alcune importazioni A&S conservano lo stesso numero di verso anche ai
+      // lati di un assolo: spezzarlo qui evita di nascondere la pausa nel verso.
+      if(!tail || tail.line!==w.line || (w.start-tail.end>=.45 && meaningfulGap(tail.end,w.start))){
         phrases.push({type:'words',line:w.line,start:w.start,end:w.end,words:[w]});
       }else{tail.words.push(w);tail.end=Math.max(tail.end,w.end);}
     }
     const segments=[];
     function addGap(start,end,position){
-      const gap=end-start;
-      if(gap<.05)return;
-      const changes=chords.filter(c=>c.start>=start-0.02&&c.start<end-0.02).length;
-      // In assenza totale di parole, il karaoke resta utilizzabile solo con accordi.
-      const noLyrics=phrases.length===0;
-      const show=noLyrics || (position==='start'&&gap>=3) ||
-        (position==='middle'&&gap>=10&&changes>=1) ||
-        (position==='end'&&gap>=10&&changes>=1);
-      if(show){
-        segments.push({type:'instrumental',start,end,
-          label:position==='start'?'Intro strumentale':position==='end'?'Finale strumentale':'Interludio strumentale'});
+      if(end-start<.05)return;
+      if(!phrases.length || meaningfulGap(start,end)){
+        const name=!phrases.length?'Parte strumentale':position==='start'?'Intro strumentale':
+          position==='end'?'Finale strumentale':'Intermezzo / assolo';
+        segments.push({type:'instrumental',start,end,label:name});
       }
     }
     let cursor=0;
@@ -176,17 +179,25 @@
         const enteredDuringGap=carried>=0 && previous && model.chords[carried].start>previous.end+0.01;
         const markerIndices=[];
         const anchoredWords=new Set(instrumental?[]:segment.words.map(w=>w.index));
-        if(carried>=0&&(index===0||enteredDuringGap) &&
-           (!Number.isInteger(model.chords[carried].word_index)||anchoredWords.has(model.chords[carried].word_index)))markerIndices.push(carried);
-        model.chords.forEach((c,i)=>{
-          // Se l'accordo e' ancorato a una parola A&S, quella posizione ha
-          // priorita' assoluta sul timing stimato (anche a inizio verso).
-          if(Number.isInteger(c.word_index)){
-            if(anchoredWords.has(c.word_index))markerIndices.push(i);
-          }else if(c.start>=segment.start-.0001&&c.start<segment.end-.0001){
-            markerIndices.push(i);
-          }
-        });
+        // La priorita' e' musicale: durante l'assolo contano i timestamp,
+        // anche se l'importatore aveva associato l'accordo a un indice parola.
+        const instrumentalAt=time=>model.segments.some(s=>s.type==='instrumental' &&
+          time>=s.start-.0001 && time<s.end-.0001);
+        if(instrumental){
+          if(carried>=0)markerIndices.push(carried); // accordo gia' attivo all'inizio
+          model.chords.forEach((c,i)=>{
+            if(c.start>=segment.start-.0001 && c.start<segment.end-.0001)markerIndices.push(i);
+          });
+        }else{
+          if(carried>=0 && (index===0 || enteredDuringGap) &&
+             !instrumentalAt(model.chords[carried].start) &&
+             (!Number.isInteger(model.chords[carried].word_index)||anchoredWords.has(model.chords[carried].word_index)))markerIndices.push(carried);
+          model.chords.forEach((c,i)=>{
+            if(instrumentalAt(c.start))return; // evita doppi marker nei versi
+            if(Number.isInteger(c.word_index) && anchoredWords.has(c.word_index))markerIndices.push(i);
+            else if(c.start>=segment.start-.0001 && c.start<segment.end-.0001)markerIndices.push(i);
+          });
+        }
         const unique=[...new Set(markerIndices)].sort((a,b)=>model.chords[a].start-model.chords[b].start);
         const wordChords=new Map();
         unique.forEach(idx=>{
@@ -213,7 +224,13 @@
           }
           markers.push({button:btn,index:idx});
         });
-        if(instrumental)section.append(strip);
+        if(instrumental){
+          if(!markers.length){
+            strip.append(makeEl('span','karaoke-instrumental-missing',
+              'Accordi non disponibili: aggiungere i cambi dal pannello 03 sul PC'));
+          }
+          section.append(strip);
+        }
         if(!markers.length)section.className+=' karaoke-no-local-chords';
         if(!instrumental){
           segment.words.forEach(word=>{
@@ -244,7 +261,14 @@
       const idx=chordAt(model.chords,t);
       if(idx!==currentChord){
         for(const row of rows)for(const marker of row.chordMarkers){
-          marker.button.classList.toggle('current',marker.index===idx);
+          const active=marker.index===idx;
+          marker.button.classList.toggle('current',active);
+          if(active){
+            const strip=marker.button.closest('.karaoke-fixed-chords');
+            if(strip && strip.scrollWidth>strip.clientWidth){
+              strip.scrollLeft=Math.max(0,marker.button.parentElement.offsetLeft-strip.clientWidth/3);
+            }
+          }
         }
         currentChord=idx;
       }
