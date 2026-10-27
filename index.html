@@ -10,16 +10,16 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.23" rel="stylesheet"/>
+<link href="./style.css?v=2.34" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.23"></script>
-<script defer="" src="./chord_extras.js?v=2.23"></script>
-<script defer="" src="./karaoke.js?v=2.23"></script>
-<script defer="" src="./transport_ui.js?v=2.23"></script>
-<script defer="" src="./continuous_mixer.js?v=2.23"></script>
-<script defer="" src="./screen_wake.js?v=2.23"></script>
-<script defer="" src="./app.js?v=2.23"></script>
+<script defer="" src="./chord_tools.js?v=2.34"></script>
+<script defer="" src="./chord_extras.js?v=2.34"></script>
+<script defer="" src="./karaoke.js?v=2.34"></script>
+<script defer="" src="./transport_ui.js?v=2.34"></script>
+<script defer="" src="./continuous_mixer.js?v=2.34"></script>
+<script defer="" src="./screen_wake.js?v=2.34"></script>
+<script defer="" src="./app.js?v=2.34"></script>
 </head>
 <body>
 <main class="shell">
@@ -70,10 +70,11 @@
 </div><button aria-expanded="false" aria-label="Espandi karaoke a tutto schermo" class="secondary section-fullscreen" data-target="karaoke-panel" type="button">⛶ Espandi</button></div></div>
 <p class="hint" hidden="" id="sync-audio-check" role="status"></p>
 <p class="hint" id="karaoke-status">Caricamento testo...</p>
+<details class="gbl-offset-details" id="gbl-offset-details"><summary>Regola offset testo</summary><div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input id="lyrics-offset" max="5" min="-5" step="0.1" type="range" value="0"/><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div></details>
 <div aria-label="Opzioni accordi pannello 04" class="gbl-score-controls" role="group">
 <label>Accordi <select aria-label="Visualizzazione accordi" id="karaoke-chord-mode"><option value="original">Originali</option><option value="simple">Semplificati</option></select></label>
 <label>Capotasto <select aria-label="Capotasto nel pannello karaoke" id="capo-position-04"><option value="0">0 · Nessuno</option><option value="1">1° tasto</option><option value="2">2° tasto</option><option value="3">3° tasto</option><option value="4">4° tasto</option><option value="5">5° tasto</option><option value="6">6° tasto</option><option value="7">7° tasto</option><option value="8">8° tasto</option><option value="9">9° tasto</option><option value="10">10° tasto</option><option value="11">11° tasto</option><option value="12">12° tasto</option></select></label>
-</div><details class="gbl-offset-details" id="gbl-offset-details"><summary>Regola offset testo</summary><div class="lyrics-offset-controls"><label for="lyrics-offset">Offset testo</label><input id="lyrics-offset" max="5" min="-5" step="0.1" type="range" value="0"/><strong id="lyrics-offset-value">+0.0 s</strong><button class="secondary" id="lyrics-offset-reset" type="button">Azzera</button><small>Si salva su questo dispositivo. Il PC sincronizza su Drive.</small></div></details>
+</div>
 <div class="karaoke-lines" id="karaoke-lines"></div>
 </section><section class="panel chords-panel" hidden="" id="chords-panel"><div class="panel-heading"><h2>Accordi sincronizzati</h2><button aria-expanded="false" aria-label="Espandi accordi a tutto schermo" class="secondary section-fullscreen" data-target="chords-panel" type="button">⛶ Espandi</button></div><details class="gbl-chords-details" id="chords-details"><summary>Mostra sequenza accordi</summary>
 <p class="hint" id="chord-engine-source">Riconoscimento da verificare.</p>
@@ -113,7 +114,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </details>
 </section>
-<footer>Guitar Backing Leon · <span id="web-build">Web 2.23</span></footer>
+<footer>Guitar Backing Leon · <span id="web-build">Web 2.34</span></footer>
 </main>
 </body>
 </html>

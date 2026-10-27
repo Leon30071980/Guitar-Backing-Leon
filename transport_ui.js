@@ -17,6 +17,7 @@
       if(!expanded)return;
       const header=expanded.querySelector('.panel-heading');
       if(header)expanded.style.setProperty('--gbl-expand-head-h',`${Math.ceil(header.getBoundingClientRect().height)}px`);
+      if(toolbar)expanded.style.setProperty('--gbl-expand-transport-h',`${Math.ceil(toolbar.getBoundingClientRect().height)}px`);
     }
     let expanded=null, savedScroll=0, savedFocus=null, native=false;
     let frame=0, lastFrame=0;
@@ -78,6 +79,7 @@
       toolbar.classList.remove('gbl-expanded-transport');
       transportHome.appendChild(toolbar);
       panel.style.removeProperty('--gbl-expand-head-h');
+      panel.style.removeProperty('--gbl-expand-transport-h');
       document.documentElement.classList.remove('gbl-expanded-active');
       document.body.classList.remove('gbl-expanded-active');
       buttons.forEach(b=>{

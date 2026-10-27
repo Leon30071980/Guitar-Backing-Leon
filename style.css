@@ -588,3 +588,49 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
  #karaoke-panel .karaoke-time-word{font-size:calc(1.12rem * var(--gbl-lyric-scale,1))}
  #karaoke-panel .karaoke-fixed-line:not(.line-current) .karaoke-time-word{font-size:calc(.9rem * var(--gbl-lyric-scale,1))}
 }
+
+
+/* 2.34 – Leggio compatto; accordi/capotasto disponibili anche in fullscreen. */
+#karaoke-panel > .gbl-score-controls {
+  display:flex;align-items:center;flex-wrap:wrap;
+  margin:3px 0 4px;padding:5px 8px;
+  border:1px solid #3d586a;border-radius:9px;
+  background:#17283b;min-width:0;gap:8px;
+}
+#karaoke-panel > .gbl-score-controls label {flex:1 1 145px;min-width:0;}
+#karaoke-panel > .gbl-score-controls select {min-width:0;max-width:100%;}
+/* The older studio-mode rule hides all direct children except the score;
+   restore ONLY these two musical controls, not diagnostic/editor sections. */
+#karaoke-panel.gbl-fullscreen > .gbl-score-controls {
+  display:flex!important;
+  position:sticky!important;
+  top:calc(var(--gbl-expand-head-h, 64px) + var(--gbl-expand-transport-h, 108px))!important;
+  z-index:23!important;
+  box-shadow:0 5px 14px #0007;
+  margin:2px 0 3px!important;
+}
+#karaoke-panel .karaoke-lines {padding:5px;}
+#karaoke-panel .karaoke-follow {
+  padding:8px 10px 6px;
+  margin-bottom:4px;
+  box-shadow:none;
+}
+#karaoke-panel .karaoke-follow-rail {margin-top:5px;}
+/* The previous verse was reserving 110px between current chord and sung words. */
+#karaoke-panel .karaoke-fixed-score {
+  grid-template-rows:66px minmax(100px,auto) 110px;
+  row-gap:5px;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-prev {
+  height:66px;overflow:hidden;padding:5px 9px;
+}
+#karaoke-panel .karaoke-fixed-line.line-current {min-height:100px;padding:8px 10px;}
+@media (max-width:600px) {
+  #karaoke-panel > .gbl-score-controls {flex-wrap:nowrap;padding:4px 6px;gap:5px;}
+  #karaoke-panel > .gbl-score-controls label {flex:1 1 50%;font-size:.67rem;gap:3px;}
+  #karaoke-panel > .gbl-score-controls select {font-size:.72rem;min-height:32px;padding:3px 4px;}
+  #karaoke-panel .karaoke-fixed-score {grid-template-rows:58px minmax(96px,auto) 108px;row-gap:4px;}
+  #karaoke-panel .karaoke-fixed-line.karaoke-prev {height:58px;padding:4px 6px;}
+  #karaoke-panel .karaoke-fixed-line.line-current {min-height:96px;padding:7px 8px;}
+  #karaoke-panel .karaoke-follow {padding:6px 8px 5px;margin-bottom:3px;}
+}
