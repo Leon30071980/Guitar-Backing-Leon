@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.44 — accordi temporali sopra le parole.
+/* Guitar Backing Leon 2.45 — accordi temporali sopra le parole.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -220,8 +220,21 @@
           else if(chord.start>=segment.end-.001 && chord.start<bridgeEnd-.001){
             bridgeMarkers.push(wrap);
           }else {
-            const anchor=locateWord(chord.start,carried===idx &&
-              chord.start<segment.start-.045);
+            // 2.45: USE the display anchor persisted by the reviewed audio/word
+            // alignment, when lyric offset matches. Old A&S word_index is NOT
+            // authoritative because importing new lyrics invalidates that index.
+            const savedIndex=Number(chord.display_word_index);
+            const savedFraction=Number(chord.display_fraction);
+            const savedOffset=Number(chord.display_anchor_offset);
+            const savedWord=(chord.display_word_index!==undefined &&
+              Number.isInteger(savedIndex) && Number.isFinite(savedFraction) &&
+              Number.isFinite(savedOffset) &&
+              Math.abs(savedOffset-lyricsOffset)<.015)
+              ?segment.words.find(w=>w.index===savedIndex):null;
+            const anchor=(savedWord && chord.start>=segment.start-.045 &&
+              chord.start<segment.end+.01)
+              ?{word:savedWord,fraction:Math.max(0,Math.min(.95,savedFraction))}
+              :locateWord(chord.start,carried===idx && chord.start < segment.start-.045);
             if(anchor){
               if(!wordChords.has(anchor.word.index))wordChords.set(anchor.word.index,[]);
               wordChords.get(anchor.word.index).push({wrap,fraction:anchor.fraction});

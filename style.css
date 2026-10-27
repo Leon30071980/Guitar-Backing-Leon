@@ -751,3 +751,18 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
 #karaoke-panel .karaoke-word-above .gbl-anchored-chord .karaoke-time-chord {white-space:nowrap;}
 #karaoke-panel .karaoke-fixed-line.karaoke-next .gbl-anchored-chord {z-index:2;}
 #karaoke-panel .gbl-chord-word-align-status {margin-top:6px;}
+
+/* 2.45 — audio chord/word review, per-change approval and real feedback */
+#gbl-word-align-preview[hidden]{display:none!important}
+#gbl-word-align-preview{border:1px solid #456b80;border-radius:11px;background:#142638;padding:12px;margin:9px 0 12px;display:grid;gap:8px}
+.gbl-align-explanation{margin:0;color:#b8cddb;font-size:.82rem}
+.gbl-word-align-list{max-height:260px;overflow-y:auto;display:grid;gap:6px}
+.gbl-word-align-item{display:flex;align-items:center;gap:9px;padding:8px;background:#1c3449;border:1px solid #41637b;border-radius:8px;cursor:pointer}
+.gbl-word-align-item input{accent-color:#58ddb4;flex:0 0 auto;width:17px;height:17px}
+.gbl-word-align-change{display:grid;gap:2px;flex:1;min-width:0}
+.gbl-word-align-change strong{color:#e2f6ff;font-size:.86rem}
+.gbl-word-align-change small{color:#b0c7d6;font-size:.72rem}
+.gbl-word-align-listen{flex:0 0 auto;font-size:.75rem;padding:6px 8px;width:auto;min-height:32px}
+.gbl-word-align-actions{display:flex;gap:8px;flex-wrap:wrap}
+.gbl-word-align-actions button{width:auto;max-width:100%;min-height:36px}
+@media(max-width:550px){.gbl-word-align-item{flex-wrap:wrap}.gbl-word-align-listen{margin-left:25px}}
