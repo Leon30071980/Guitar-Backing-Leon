@@ -23,14 +23,16 @@ const karaokeShownChord=raw=>window.GuitarChordTools.display(
 function syncScoreControls(){karaokeCapoSelect.value=capoSelect.value;}
 karaokeModeSelect.addEventListener('change',()=>{
  try{localStorage.setItem('gbl-karaoke-chord-mode',karaokeModeSelect.value);}catch{}
- karaokeView.render(karaokeWords,current?.chords||[],Number(current?.duration)||0);
+ karaokeView.refreshChordLabels();
  karaokeView.tick(gblMusicTime(),false);
 });
-karaokeCapoSelect.addEventListener('change',()=>{
+function onKaraokeCapoInput(){
  capoSelect.value=karaokeCapoSelect.value;
  try{localStorage.setItem('gbl-capo',capoSelect.value);}catch{}
  updateCapo();
-});
+}
+karaokeCapoSelect.addEventListener('input',onKaraokeCapoInput);
+karaokeCapoSelect.addEventListener('change',onKaraokeCapoInput);
 const shownChord = chord => window.GuitarChordTools.display(chord, capoValue());
 function updateCapo() {
   syncScoreControls();
@@ -43,14 +45,16 @@ function updateCapo() {
   $('capo-hint').textContent = capoValue()
     ? `Capotasto al tasto ${capoValue()}: posizioni da suonare. La tonalità della base resta invariata.`
     : 'Accordi originali: la tonalità della base non cambia.';
-  karaokeView.render(karaokeWords,current?.chords||[],Number(current?.duration)||0);
+  karaokeView.refreshChordLabels();
   karaokeView.tick(gblMusicTime(),false);
   syncChords();
 }
-capoSelect.addEventListener('change', () => {
+function onMainCapoInput(){
   try { localStorage.setItem('gbl-capo', capoSelect.value); } catch {}
   updateCapo();
-});
+}
+capoSelect.addEventListener('input',onMainCapoInput);
+capoSelect.addEventListener('change',onMainCapoInput);
 const fmt = v => { const n = Math.max(0,Number(v)||0); return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`; };
 let token = '', tokenClient, tree, songs = [], current = null, sourceUrl = '', refreshing = false;
 let forceConsentNext=false;

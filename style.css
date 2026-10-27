@@ -704,3 +704,34 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
 #karaoke-panel .karaoke-bridge-chords .karaoke-time-chord {font-size:calc(.77rem * var(--gbl-lyric-scale,1));color:#a3c5eb!important;}
 #karaoke-panel .karaoke-fixed-line.karaoke-prev .karaoke-bridge-chords {opacity:.85;}
 #karaoke-panel .karaoke-fixed-line.karaoke-next .karaoke-bridge-chords {opacity:1;}
+
+/* 2.43 — intro/intermezzi/assoli centrati anche nel leggio compatto.
+   safe center centra le sequenze corte, ma parte da sinistra quando la
+   sequenza eccede la larghezza: nessun accordo viene tagliato sul bordo. */
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental {
+  text-align:center;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-label,
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-words {
+  text-align:center;
+  justify-content:center;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-chords {
+  box-sizing:border-box;
+  display:flex!important;
+  flex-flow:row nowrap!important;
+  justify-content:safe center!important;
+  align-items:center;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+  padding:4px 3px 7px;
+  margin:3px auto 2px;
+}
+#karaoke-panel .karaoke-fixed-line.karaoke-instrumental .karaoke-fixed-chords > .gbl-chord-with-tip {
+  flex:0 0 auto;
+}

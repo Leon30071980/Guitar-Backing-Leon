@@ -219,7 +219,11 @@
               wordChords.get(nearest.index).push(wrap);
             }
           }
-          markers.push({button:btn,index:idx});
+          // Conserviamo il riferimento all'accordo originale: al cambio
+          // di capotasto aggiorniamo direttamente le etichette nel DOM.
+          // Vale anche per intro, intermezzi, assoli e anteprime dei versi.
+          markers.push({button:btn,index:idx,raw:chord.chord,start:chord.start,
+            timingNote:typeof timingNote==='string'?timingNote:'',wrap});
         });
         if(instrumental){
           if(!markers.length){
@@ -254,6 +258,20 @@
         rows.push({section,segment,chordMarkers:markers,focusStart:focusStartForSegment(segment,previous,model.chords)});
       });
       tick(lastTickTime,false);
+    }
+    // Cambio capotasto istantaneo: niente ricostruzione di frasi, sezioni,
+    // posizione dello scroll o stato di riproduzione.
+    function refreshChordLabels(){
+      for(const row of rows)for(const marker of row.chordMarkers){
+        const label=String(formatChord(marker.raw)||'—');
+        if(marker.button.textContent===label)continue;
+        marker.button.textContent=label;
+        marker.button.title=`${label} · ${stamp(marker.start)} (${marker.start.toFixed(2)} s)${marker.timingNote}`;
+        const oldDiagram=marker.wrap.querySelector('.gbl-diagram');
+        if(oldDiagram)oldDiagram.remove();
+        if(window.GuitarChordTools?.diagram && label!=='—')
+          marker.wrap.append(window.GuitarChordTools.diagram(label));
+      }
     }
     function tick(time,_autoScroll=true){
       const t=Math.max(0,num(time)||0);
@@ -299,7 +317,7 @@
       lyricsOffset=Number.isFinite(n)?Math.max(-5,Math.min(5,n)):0;
       render(originalWords,originalChords,originalDuration);
     }
-    return {render,tick,setOffset,getOffset:()=>lyricsOffset,setZoom,getZoom:()=>lyricScale};
+    return {render,tick,refreshChordLabels,setOffset,getOffset:()=>lyricsOffset,setZoom,getZoom:()=>lyricScale};
   }
   window.GuitarKaraoke={make,buildSegments,chordAt};
 })();
