@@ -1,5 +1,5 @@
 "use strict";
-/* Guitar Backing Leon 2.46 — accordi temporali sopra le parole.
+/* Guitar Backing Leon 2.47 — accordi temporali sopra le parole.
  * Un unico orologio: audio.currentTime. Gli accordi NON sono agganciati
  * ai confini delle parole. Nessuna riga artificiale per pause vocali brevi.
  * I dati non vengono modificati: questa e' solo una vista del karaoke.
@@ -203,10 +203,27 @@
           // Altrimenti compare un falso extra sopra la prima parola.
           const firstNew=model.chords.find(c=>c.chord!=='N' &&
             c.start>=segment.start-.0001 && c.start<segment.start+.18);
-          if(carried>=0 && model.chords[carried].chord!=='N' &&
-             model.chords[carried].start<=segment.start+.04 && !firstNew)
+          // Non copiare nella nuova frase l'accordo A&S che appartiene
+          // editorialmente a una parola del verso precedente.
+          const carriedEvent=carried>=0 ? model.chords[carried] : null;
+          const sourceWordIndex=Number(carriedEvent?.source_word_index);
+          const sourceOnThisLine=carriedEvent?.source_provider!=='accordiespartiti' ||
+            carriedEvent?.source_kind!=='lyrics' ||
+            !Number.isInteger(sourceWordIndex) ||
+            segment.words.some(w=>w.index===sourceWordIndex);
+          if(carried>=0 && sourceOnThisLine && carriedEvent.chord!=='N' &&
+             carriedEvent.start<=segment.start+.04 && !firstNew)
             markerIndices.push(carried);
           model.chords.forEach((c,i)=>{
+            // Gli spartiti A&S salvano anche la posizione editoriale sulla
+            // parola; gli accordi di una frase si mostrano su quella frase,
+            // anche se il timestamp musicale e' ancora una stima.
+            const srcWord=Number(c.source_word_index);
+            if(c.source_provider==='accordiespartiti' && c.source_kind==='lyrics' &&
+               Number.isInteger(srcWord) && segment.words.some(w=>w.index===srcWord)){
+              markerIndices.push(i);return;
+            }
+            if(c.source_provider==='accordiespartiti' && c.source_kind==='lyrics' && Number.isInteger(srcWord))return;
             if(instrumentalAt(c.start))return; // evita doppi marker nei versi
             if(c.start>=segment.start-.0001 && c.start<bridgeEnd-.0001)markerIndices.push(i);
           });
@@ -230,7 +247,8 @@
           btn.type='button';btn.title=`${label} · ${stamp(chord.start)} (${chord.start.toFixed(2)} s)`;
           btn.addEventListener('click',()=>isEditing() && onChordClick ? onChordClick(idx) : onSeek?.(chord.start));
           if(instrumental){strip.append(wrap);}
-          else if(chord.start>=segment.end-.001 && chord.start<bridgeEnd-.001){
+          else if(chord.source_provider!=='accordiespartiti' &&
+                  chord.start>=segment.end-.001 && chord.start<bridgeEnd-.001){
             bridgeMarkers.push(wrap);
           }else {
             // 2.45: USE the display anchor persisted by the reviewed audio/word
@@ -244,10 +262,17 @@
               Number.isFinite(savedOffset) &&
               Math.abs(savedOffset-lyricsOffset)<.015)
               ?segment.words.find(w=>w.index===savedIndex):null;
-            const anchor=(savedWord && chord.start>=segment.start-.045 &&
-              chord.start<segment.end+.01)
-              ?{word:savedWord,fraction:Math.max(0,Math.min(.95,savedFraction))}
-              :locateWord(chord.start,carried===idx && chord.start < segment.start-.045);
+            const sourceIndex=Number(chord.source_word_index);
+            const sourceWord=(chord.source_provider==='accordiespartiti' &&
+              chord.source_kind==='lyrics' && Number.isInteger(sourceIndex))
+              ?segment.words.find(w=>w.index===sourceIndex):null;
+            const sourceFraction=Number(chord.source_fraction);
+            const anchor=sourceWord
+              ?{word:sourceWord,fraction:Number.isFinite(sourceFraction)?clamp(sourceFraction,0,.96):0}
+              :(savedWord && chord.start>=segment.start-.045 &&
+                chord.start<segment.end+.01)
+                ?{word:savedWord,fraction:Math.max(0,Math.min(.95,savedFraction))}
+                :locateWord(chord.start,carried===idx && chord.start < segment.start-.045);
             if(anchor){
               if(!wordChords.has(anchor.word.index))wordChords.set(anchor.word.index,[]);
               wordChords.get(anchor.word.index).push({wrap,fraction:anchor.fraction,start:chord.start});
