@@ -66,6 +66,7 @@ function updateLyricsOffset(value){
   $('lyrics-offset-value').textContent=`${n>=0?'+':''}${n.toFixed(1)} s`;
   karaokeView.setOffset(n);
   karaokeView.tick(gblMusicTime(),false);
+  if(typeof gblCarPlayNotify==='function')gblCarPlayNotify();
 }
 $('lyrics-offset').addEventListener('input',()=>{
   const n=Number($('lyrics-offset').value);
@@ -337,6 +338,7 @@ async function openSong(song){
   renderChords(song.chords||[]);
   $('karaoke-panel').hidden=false;
   karaokeWords=[];
+  gblCarPlayNotify();
   updateLyricsOffset(0);
   $('sync-audio-check').hidden=true;
   karaokeView.render([], song.chords||[],Number(song.duration)||0);
@@ -360,6 +362,7 @@ async function loadKaraoke(song){
     try{const local=localStorage.getItem('gbl-lyrics-offset-'+song.id);if(local!==null)offset=Number(local)||0;}catch{}
     updateLyricsOffset(offset);
     karaokeView.render(karaokeWords,song.chords||[],Number(song.duration)||0);
+    gblCarPlayNotify();
     karaokeView.tick(gblMusicTime(),false);
     $('karaoke-status').textContent=karaokeWords.length
       ? `${karaokeWords.length} parole · Lingua: ${result.language||'automatica'} · Clicchi una parola per ascoltare da quel punto.`
@@ -495,3 +498,25 @@ cloudTrash.addEventListener('click',async()=>{
     await refreshAll();await cloudInventory();
   }catch(err){cloudStatus.textContent='Pulizia parziale o non riuscita: '+err.message+' Aggiorni l’elenco prima di riprovare.';}
 });
+
+
+// v2.64: adapter a sola lettura per il Companion CarPlay.
+// Niente token Google Drive, ID file audio o stream: solo tempi e parole.
+window.GBLCarPlaySource=function(){
+  if(!current)return null;
+  const audio=$('player');
+  const value=gblMusicTime();
+  return {
+    songId:String(current.id||''),
+    title:String(current.name||current.title||'Brano'),
+    duration:Number(current.duration)||Number(audio.duration)||0,
+    position:Number.isFinite(value)?value:0,
+    playing:!audio.paused&&!audio.ended,
+    offset:Number($('lyrics-offset').value)||0,
+    words:karaokeWords.map(w=>({text:String(w.text||''),start:Number(w.start)||0,end:Number(w.end)||0,line:Number(w.line)||0}))
+  };
+};
+function gblCarPlayNotify(){document.dispatchEvent(new Event('gbl:carplay-update'));}
+for(const eventName of ['play','pause','seeked','timeupdate','ended']){
+  $('player').addEventListener(eventName,gblCarPlayNotify);
+}
