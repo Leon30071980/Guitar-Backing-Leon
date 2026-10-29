@@ -1,55 +1,66 @@
-/* Modulo opzionale. Nessuna modifica grafica se ?carplay=1 non e' attivo. */
+/* Guitar Backing Leon web v2.65: comando CarPlay esplicito.
+   Nessun reload, nessun tap sulla versione, nessuna modifica OAuth.
+   Il Companion nativo iOS resta necessario per la Live Activity su CarPlay.
+*/
 (()=>{
   'use strict';
-  const source=window.GBLCarPlaySource;
-  const protocol=window.GuitarCarPlayProtocol;
-  if(typeof source!=='function'||!protocol)return;
-  let enabled=(new URLSearchParams(location.search)).get('carplay')==='1';
-  try{enabled=enabled||localStorage.getItem('gbl-carplay-mode')==='1';}catch{}
-  // L'iPhone PWA standalone non ha barra degli indirizzi. La modalita'
-  // opzionale si attiva/disattiva toccando 4 volte "Web 2.64" nel footer.
-  const footer=document.getElementById('web-build');
-  let taps=0,firstTap=0;
-  footer?.addEventListener('click',()=>{
-    const now=Date.now();
-    if(now-firstTap>3000){taps=0;firstTap=now;}
-    if(++taps>=4){
-      try{localStorage.setItem('gbl-carplay-mode',enabled?'0':'1');}catch{}
-      location.reload();
-    }
-  });
-  let lastSnapshot=null, button=null;
+  const button=document.getElementById('gbl-carplay-send');
+  const status=document.getElementById('gbl-carplay-status');
+  if(!button)return;
+
+  function message(text){
+    if(status){status.textContent=text;status.hidden=false;}
+  }
   function snapshot(){
-    const data=source();
-    if(!data||!data.songId)return null;
-    return data;
+    try{
+      return typeof window.GBLCarPlaySource==='function'?window.GBLCarPlaySource():null;
+    }catch(error){return null;}
   }
   function refresh(){
-    lastSnapshot=snapshot();
-    if(button){
-      button.disabled=!lastSnapshot||!lastSnapshot.words?.length;
-      button.title=lastSnapshot?.words?.length?'Trasferisci posizione e frasi al Companion iPhone':'Apri un brano con il karaoke pronto';
-    }
+    const song=snapshot();
+    const ready=!!(song?.songId&&Array.isArray(song.words)&&song.words.length);
+    button.setAttribute('aria-label',ready?'Invia parole sincronizzate al Companion CarPlay':'CarPlay: seleziona un brano con karaoke pronto');
+    button.title=ready?'Invia testo e posizione al Companion iOS':'Seleziona un brano e attendi il caricamento del karaoke';
+    button.classList.toggle('gbl-carplay-ready',ready);
+    // Il pulsante resta premibile per spiegare quale requisito manca.
   }
   function send(){
-    refresh();
-    if(!lastSnapshot||!lastSnapshot.words?.length){alert('Carica prima un brano con testo disponibile.');return;}
-    const href=protocol.link(lastSnapshot);
-    // Il passaggio e' una navigazione esplicita, NON una sincronizzazione background.
-    window.location.href=href;
-  }
-  if(enabled){
-    const actions=document.querySelector('.section-transport-actions')||document.querySelector('#transport-home');
-    if(actions){
-      button=document.createElement('button');
-      button.type='button';button.className='secondary';
-      button.id='gbl-carplay-send';button.textContent='CarPlay ↗';
-      button.setAttribute('aria-label','Invia brano al visualizzatore karaoke CarPlay');
-      button.title='Passa il brano al Companion nativo (richiede installazione)';
-      button.addEventListener('click',send);actions.appendChild(button);
+    const protocol=window.GuitarCarPlayProtocol;
+    if(!protocol||typeof protocol.link!=='function'){
+      message('Modulo CarPlay non caricato. Verifica carplay_protocol.js e ricarica la pagina.');
+      return false;
+    }
+    const song=snapshot();
+    if(!song?.songId){
+      message('Prima seleziona una canzone nella libreria.');
+      return false;
+    }
+    if(!Array.isArray(song.words)||!song.words.length){
+      message('Attendi il caricamento del testo karaoke per questo brano.');
+      return false;
+    }
+    try{
+      const link=protocol.link(song);
+      if(typeof link!=='string'||!link.startsWith('guitarleoncarplay://sync?data='))throw new Error('Link non valido');
+      message('Apertura di CarPlay Companion… Il Companion iOS deve essere installato; questo pulsante non apre direttamente lo schermo dell’auto.');
+      // Apertura ESPLICITA dell'app nativa; non ricarica Guitar Backing Leon.
+      window.location.assign(link);
+      return true;
+    }catch(error){
+      message('Non è stato possibile preparare il karaoke per CarPlay.');
+      return false;
     }
   }
+  button.addEventListener('click',event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    send();
+  });
   document.addEventListener('gbl:carplay-update',refresh);
-  window.GuitarCarPlayBridge=Object.freeze({getSnapshot:()=>snapshot(),prepare:()=>{const s=snapshot();return s?protocol.windowed(s):null;},open:send});
+  window.GuitarCarPlayBridge=Object.freeze({
+    getSnapshot:snapshot,
+    prepare:()=>{const s=snapshot();return s&&window.GuitarCarPlayProtocol?.windowed?.(s)||null;},
+    open:send
+  });
   refresh();
 })();
