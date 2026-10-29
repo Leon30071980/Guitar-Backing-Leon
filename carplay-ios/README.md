@@ -1,15 +1,15 @@
-# Guitar Leon CarPlay Companion v1.3
+# Guitar Leon CarPlay Companion v1.4
 
 Progetto iPhone nativo **incluso nel repository di Guitar Backing Leon**.
 
 Questa versione riceve da `web/carplay_bridge.js` titolo, posizione del lettore, stato Play/Pausa e una **finestra** di versi via URL scheme `guitarleoncarplay://sync?data=...`.
-Non preleva dati da Google Drive, non accede al suo account e non contiene brani privati.
+Ora il Companion può anche accedere direttamente alla **libreria privata Google Drive** (solo lettura) con OAuth iOS PKCE e scope `drive.file`, configurando un client OAuth iOS nello stesso progetto Google Cloud della PWA. Non contiene brani privati né credenziali nel repository. Per i passaggi consultare `GUIDA_DRIVE_CARPLAY.md` nella radice del pacchetto.
 
 ## Prova dal sito web
 
 1. Apri la PWA v2.64 dall'icona sulla Home dell'iPhone e accedi come sempre.
 2. Carica un brano e attendi che il testo karaoke sia pronto.
-3. Nel footer tocca 4 volte **Web 2.64** in 3 secondi: appare il tasto **CarPlay ↗**.
+3. Nella PWA v2.65 il pulsante CarPlay è già visibile, senza toccare quattro volte la versione.
 4. Tocca CarPlay ↗ (è un'azione volontaria, necessaria per aprire il Companion iOS).
 5. iOS apre Guitar Leon Karaoke con il brano, il tempo e i versi. Il Companion richiede il consenso alle Live Activities.
 6. Torna nella PWA e riproduci il brano. Controlla la Dashboard di CarPlay **da fermo**.
@@ -29,7 +29,7 @@ L'IPA **non è firmato e non è direttamente installabile**. Occorre firmarlo/in
 - La dimensione massima disponibile dipende dall'auto e da iOS. L'interfaccia è ottimizzata per `ActivityFamily.small`.
 - Non pubblicare i file `lyrics.json` reali né credenziali nel repository.
 
-Versioni: **PWA v2.64**, **Companion v1.3**, motore PC originale **v2.63**.
+Versioni: **PWA v2.65 (invariata)**, **Companion v1.4**, motore PC originale **v2.63 (invariato)**.
 
 Fonti:
 - https://developer.apple.com/design/human-interface-guidelines/live-activities
