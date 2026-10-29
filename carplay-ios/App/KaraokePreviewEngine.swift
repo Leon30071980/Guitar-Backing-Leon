@@ -27,7 +27,7 @@ final class KaraokePreviewEngine: ObservableObject {
     }
     var duration: Double { phrases.last?.end ?? 0 }
 
-    func importLyrics(data: Data, filename: String) throws {
+    func importLyrics(data: Data, filename: String, displayTitle: String? = nil) throws {
         guard data.count < 2_000_000 else { throw CocoaError(.fileReadTooLarge) }
         let file = try JSONDecoder().decode(LeonLyricsFile.self, from: data)
         let parsed = LeonPhrasing.phrases(from: file)
@@ -35,7 +35,7 @@ final class KaraokePreviewEngine: ObservableObject {
         stop()
         externalHasMore = false
         phrases = parsed
-        songTitle = filename.replacingOccurrences(of: ".json", with: "")
+        songTitle = displayTitle ?? filename.replacingOccurrences(of: ".json", with: "")
         rebuildLines()
         feedback = "Caricati \(file.words.count) vocaboli, \(parsed.count) frasi. \(wasTruncated ? "Testo lungo: verrà inviato a finestre mentre l'app è attiva." : "Timeline completa e compatta.")"
     }
