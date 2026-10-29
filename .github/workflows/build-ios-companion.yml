@@ -11,6 +11,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Installa XcodeGen
         run: brew install xcodegen
+      - name: Configura Google OAuth iOS (opzionale)
+        env:
+          GUITAR_GOOGLE_IOS_CLIENT_ID: ${{ vars.GUITAR_GOOGLE_IOS_CLIENT_ID }}
+        run: |
+          if [ -n "$GUITAR_GOOGLE_IOS_CLIENT_ID" ]; then
+            python3 Tools/configure_google_oauth.py "$GUITAR_GOOGLE_IOS_CLIENT_ID"
+          else
+            echo "AVVISO: variabile GUITAR_GOOGLE_IOS_CLIENT_ID assente: lettura Drive disabilitata."
+          fi
       - name: Genera progetto Xcode
         run: xcodegen generate
       - name: Compila su Mac cloud senza firma
