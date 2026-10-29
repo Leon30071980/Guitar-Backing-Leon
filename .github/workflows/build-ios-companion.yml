@@ -1,0 +1,27 @@
+name: CarPlay Companion - compila iOS (unsigned)
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: carplay-ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Genera progetto Xcode
+        run: xcodegen generate
+      - name: Compila su Mac cloud senza firma
+        run: xcodebuild -project GuitarLeonKaraoke.xcodeproj -scheme GuitarLeonKaraoke -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Impacchetta IPA unsigned
+        run: |
+          mkdir -p package/Payload
+          cp -R build/Build/Products/Release-iphoneos/GuitarLeonKaraoke.app package/Payload/
+          cd package && zip -q -r ../Leon_Karaoke_UNSIGNED.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Leon-CarPlay-unsigned-ipa
+          path: carplay-ios/Leon_Karaoke_UNSIGNED.ipa
+          if-no-files-found: error
