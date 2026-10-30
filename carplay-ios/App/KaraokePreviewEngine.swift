@@ -11,6 +11,7 @@ final class KaraokePreviewEngine: ObservableObject {
         LeonPhrase(start: 14, end: 20, text: "LA PROSSIMA FRASE ARRIVERÀ")
     ]
     @Published var position = 0.0
+    @Published private(set) var offsetSeconds = UserDefaults.standard.double(forKey: "leon.karaoke.lyricsOffset.v1")
     @Published var playing = false
     @Published var feedback = "Modalità laboratorio: il lettore PWA originale non è ancora collegato."
     private var activity: Activity<LeonKaraokeAttributes>?
@@ -24,11 +25,26 @@ final class KaraokePreviewEngine: ObservableObject {
     private var lastPublishedPhrase = ""
     private var lastPublishDate = Date.distantPast
 
+    // Segno intuitivo: +0.5s RITARDA le parole rispetto all'audio.
+    // Un valore negativo le anticipa. Non alteriamo la velocità del brano.
+    var displayedPosition: Double { LeonLyricsTiming.displayedTime(audioTime: position, offset: offsetSeconds) }
     var current: String {
-        guard let i = LeonPhrasing.index(at: position, in: phrases) else { return "" }
+        guard let i = LeonPhrasing.index(at: displayedPosition, in: phrases) else { return "" }
         return phrases[i].text
     }
     var duration: Double { phrases.last?.end ?? 0 }
+
+    func setOffset(_ seconds: Double) {
+        guard seconds.isFinite else { return }
+        let rounded = LeonLyricsTiming.normalizedOffset(seconds)
+        guard rounded != offsetSeconds else { return }
+        offsetSeconds = rounded
+        UserDefaults.standard.set(rounded, forKey: "leon.karaoke.lyricsOffset.v1")
+        rebuildLines()
+        lastPublishedPhrase = current
+        lastPublishDate = .now
+        Task { await publish() }
+    }
 
     func importLyrics(data: Data, filename: String, displayTitle: String? = nil) throws {
         guard data.count < 2_000_000 else { throw CocoaError(.fileReadTooLarge) }
@@ -47,7 +63,7 @@ final class KaraokePreviewEngine: ObservableObject {
         // Manteniamo 3.500 byte al massimo per il ContentState, incluse
         // codifiche UTF-8, caratteri Unicode ed escape JSON.
         var fitted: [LeonTimedLine] = []
-        let startIndex = max(0, phrases.lastIndex(where: { $0.start <= position }) ?? 0)
+        let startIndex = max(0, phrases.lastIndex(where: { $0.start <= displayedPosition }) ?? 0)
         for phrase in phrases.dropFirst(startIndex) {
             let one = LeonTimedLine(d: Int((phrase.start * 10).rounded()),
                                     e: Int((phrase.end * 10).rounded()),
@@ -80,7 +96,7 @@ final class KaraokePreviewEngine: ObservableObject {
         playing = isPlaying
         lastDate = Date()
         let phrase = current
-        if wasTruncated && position >= lastWindowEnd - 8 { rebuildLines() }
+        if wasTruncated && displayedPosition >= lastWindowEnd - 8 { rebuildLines() }
         // L'aggiornamento del ContentState e' una richiesta; iOS puo' comunque
         // diradare l'effettivo ridisegno della schermata di blocco / CarPlay.
         if changed || (phrase != lastPublishedPhrase && Date().timeIntervalSince(lastPublishDate) >= 2.0) {
@@ -181,7 +197,7 @@ final class KaraokePreviewEngine: ObservableObject {
 
     private func state() -> LeonKaraokeAttributes.ContentState {
         .init(anchorEpoch: Date().timeIntervalSince1970,
-              anchorPosition: position,
+              anchorPosition: displayedPosition,
               isPlaying: playing,
               phraseFallback: current,
               hasMore: wasTruncated,
@@ -197,7 +213,7 @@ final class KaraokePreviewEngine: ObservableObject {
 
     private func tick() {
         advanceClock()
-        if playing && wasTruncated && position >= lastWindowEnd - 8 {
+        if playing && wasTruncated && displayedPosition >= lastWindowEnd - 8 {
             rebuildLines()
             Task { await publish() }
         }

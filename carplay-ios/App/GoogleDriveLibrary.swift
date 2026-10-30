@@ -77,6 +77,9 @@ final class GoogleDriveLibrary: ObservableObject {
 
     private var authSession: ASWebAuthenticationSession?
     private let presentation = LoginPresentation()
+    private var inFlightAudio: [String: Task<URL, Error>] = [:]
+    private var inFlightLyrics: [String: Task<Data, Error>] = [:]
+    private var lyricsMemory: [String: Data] = [:]
     private var accessToken = ""
     private var expiry = Date.distantPast
     private let scope = "https://www.googleapis.com/auth/drive.file"
@@ -158,6 +161,7 @@ final class GoogleDriveLibrary: ObservableObject {
     }
 
     func disconnect() {
+        lyricsMemory.removeAll()
         DriveKeychain.clear()
         accessToken = ""
         expiry = .distantPast
@@ -171,7 +175,7 @@ final class GoogleDriveLibrary: ObservableObject {
         if loading { return }
         loading = true
         defer { loading = false }
-        do { try await readLibrary() }
+        do { try await readLibrary(); lyricsMemory.removeAll() }
         catch { message = error.localizedDescription }
     }
 
@@ -179,7 +183,14 @@ final class GoogleDriveLibrary: ObservableObject {
         guard let lyricsId = song.lyricsFileId, !lyricsId.isEmpty else {
             throw DriveError.message("Questo brano non ha ancora un testo sincronizzato su Drive.")
         }
-        return try await fetchFile(lyricsId)
+        if let cached = lyricsMemory[lyricsId] { return cached }
+        if let existing = inFlightLyrics[lyricsId] { return try await existing.value }
+        let task = Task<Data, Error> { try await self.fetchFile(lyricsId) }
+        inFlightLyrics[lyricsId] = task
+        defer { inFlightLyrics[lyricsId] = nil }
+        let data = try await task.value
+        lyricsMemory[lyricsId] = data
+        return data
     }
 
     // Scarica i due MP3 nell'area cache PRIVATA di iOS, senza link pubblici
@@ -189,6 +200,16 @@ final class GoogleDriveLibrary: ObservableObject {
               let fileId = song.tracks?[mix], Self.validFileId(fileId) else {
             throw DriveError.message("Traccia \(mix) non presente su Drive: rielabora il brano sul PC.")
         }
+        // Se Precarica e Successivo richiedono lo stesso file contemporaneamente,
+        // condividono il download: niente file MP3 parziali o sovrascritti.
+        if let existing = inFlightAudio[fileId] { return try await existing.value }
+        let task = Task<URL, Error> { try await self.downloadAudio(fileId: fileId) }
+        inFlightAudio[fileId] = task
+        defer { inFlightAudio[fileId] = nil }
+        return try await task.value
+    }
+
+    private func downloadAudio(fileId: String) async throws -> URL {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("GuitarLeonAudio", isDirectory: true)
         try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
@@ -214,7 +235,6 @@ final class GoogleDriveLibrary: ObservableObject {
         guard size > 1024 && size <= 250_000_000 else {
             throw DriveError.message("Dimensione audio non valida o superiore a 250 MB.")
         }
-        // Il download non deve mai modificare i file Google Drive.
         if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
         try FileManager.default.moveItem(at: downloaded, to: target)
         return target

@@ -28,7 +28,7 @@ struct LeonKaraokeAttributes: ActivityAttributes {
 enum LeonLiveClock {
     static func time(at now: Date, state: LeonKaraokeAttributes.ContentState) -> Double {
         let elapsed = state.isPlaying ? max(0, now.timeIntervalSince1970 - state.anchorEpoch) : 0
-        return max(0, state.anchorPosition + elapsed)
+        return state.anchorPosition + elapsed
     }
 
     static func line(at now: Date, state: LeonKaraokeAttributes.ContentState) -> String {

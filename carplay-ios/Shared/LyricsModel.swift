@@ -48,7 +48,8 @@ enum LeonPhrasing {
     static func index(at time: Double, in phrases: [LeonPhrase]) -> Int? {
         guard !phrases.isEmpty else { return nil }
         // Preview the next verse slightly before its beginning, as on the PWA.
+        guard time + 0.25 >= phrases[0].start else { return nil }
         if let i = phrases.indices.last(where: { phrases[$0].start <= time + 0.25 }) { return i }
-        return 0
+        return nil
     }
 }

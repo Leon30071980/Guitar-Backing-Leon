@@ -1,4 +1,4 @@
-"""Verifiche offline di struttura, schema e configurazione del progetto v1.5.
+"""Verifiche offline di struttura, schema e configurazione del progetto v1.6.
 Non sostituiscono una build su Xcode né un accesso reale a Google Drive.
 """
 import json, plistlib, sys, tempfile
@@ -14,7 +14,7 @@ for invalid in ('client-web', '123-invalid.apps.example.com', ''):
     else: raise AssertionError('client id invalido accettato')
 
 p=plistlib.loads((root/'App/Info.plist').read_bytes())
-assert p['CFBundleShortVersionString']=='1.5'
+assert p['CFBundleShortVersionString']=='1.6'
 assert any('guitarleoncarplay' in x.get('CFBundleURLSchemes',[]) for x in p['CFBundleURLTypes'])
 
 example={'version': 1, 'songs':[
@@ -33,4 +33,4 @@ assert 'lyricsFileId' in swift
 assert 'ASWebAuthenticationSession' in swift
 assert 'SecItemAdd' in swift
 assert 'Content-Type", value:' not in swift
-print('PASS 12 verifiche offline Drive Connector v1.5')
+print('PASS 12 verifiche offline Drive Connector v1.6')

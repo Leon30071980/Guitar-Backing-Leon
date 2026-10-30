@@ -6,7 +6,7 @@ import MediaPlayer
 // in parallelo. Si sente una sola traccia per volta; la chitarra resta ON.
 // Il tempo del karaoke viene letto dal player, mai da un cronometro indipendente.
 @MainActor
-final class LeonAudioPlayer: ObservableObject {
+final class LeonAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var ready = false
     @Published private(set) var playing = false
     @Published private(set) var vocalsEnabled = true
@@ -14,6 +14,11 @@ final class LeonAudioPlayer: ObservableObject {
     @Published private(set) var duration = 0.0
     @Published var message = "Seleziona un brano dalla libreria Drive."
     var onProgress: ((Double, Bool) -> Void)?
+    var onFinished: (() -> Void)?
+    var onNext: (() -> Void)?
+    var onPrevious: (() -> Void)?
+    @Published private(set) var systemOutputLatency = 0.0
+    @Published private(set) var audioRoute = "iPhone"
 
     private var full: AVAudioPlayer?
     private var noVocals: AVAudioPlayer?
@@ -22,7 +27,8 @@ final class LeonAudioPlayer: ObservableObject {
     private var lastNowPlayingAt = Date.distantPast
     private var notifications: [NSObjectProtocol] = []
 
-    init() {
+    override init() {
+        super.init()
         // Per comandi auricolare/CarPlay standard, non controlli personalizzati.
         let remote = MPRemoteCommandCenter.shared()
         remote.playCommand.addTarget { [weak self] _ in
@@ -33,6 +39,22 @@ final class LeonAudioPlayer: ObservableObject {
             Task { @MainActor in self?.pause() }
             return .success
         }
+        remote.nextTrackCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.onNext?() }
+            return .success
+        }
+        remote.previousTrackCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.onPrevious?() }
+            return .success
+        }
+        // Valori iniziali. L'interfaccia aggiorna i tasti quando cambia la coda.
+        remote.nextTrackCommand.isEnabled = false
+        remote.previousTrackCommand.isEnabled = false
+        notifications.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.refreshAudioRoute() }
+        })
         notifications.append(NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
         ) { [weak self] note in
@@ -54,6 +76,8 @@ final class LeonAudioPlayer: ObservableObject {
             throw NSError(domain: "LeonAudio", code: 2,
                           userInfo: [NSLocalizedDescriptionKey: "Le basi non sono sincronizzabili (durate diverse)."])
         }
+        a.delegate = self
+        b.delegate = self
         a.volume = vocalsEnabled ? 1 : 0
         b.volume = vocalsEnabled ? 0 : 1
         full = a
@@ -93,6 +117,7 @@ final class LeonAudioPlayer: ObservableObject {
             return
         }
         playing = true
+        refreshAudioRoute()
         startClock()
         updateNowPlaying()
         onProgress?(position, true)
@@ -141,6 +166,19 @@ final class LeonAudioPlayer: ObservableObject {
         message = vocalsEnabled ? "Voce ON · chitarra ON" : "Voce OFF · chitarra ON"
     }
 
+    func setSkipAvailability(previous: Bool, next: Bool) {
+        let remote = MPRemoteCommandCenter.shared()
+        remote.previousTrackCommand.isEnabled = previous
+        remote.nextTrackCommand.isEnabled = next
+    }
+
+    // Latenza riportata dalla route, non misura end-to-end del display CarPlay.
+    private func refreshAudioRoute() {
+        let session = AVAudioSession.sharedInstance()
+        systemOutputLatency = max(0, session.outputLatency)
+        audioRoute = session.currentRoute.outputs.first?.portName ?? "iPhone"
+    }
+
     private func startClock() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
@@ -157,14 +195,29 @@ final class LeonAudioPlayer: ObservableObject {
         if abs(silent.currentTime - position) > 0.09 { silent.currentTime = position }
     }
 
+    // Il delegate permette di rilevare la fine del brano anche quando iOS
+    // sospende/rallenta il timer dell'interfaccia a schermo bloccato.
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor [weak self] in self?.finishTrack() }
+    }
+
+    private func finishTrack() {
+        guard playing else { return } // due MP3: una sola transizione di coda
+        full?.stop(); noVocals?.stop()
+        playing = false
+        position = duration
+        timer?.invalidate(); timer = nil
+        updateNowPlaying()
+        onProgress?(position, false)
+        onFinished?()
+    }
+
     private func tick() {
         guard playing else { return }
         syncPosition()
-        if position >= duration - 0.15 || (full?.isPlaying == false && noVocals?.isPlaying == false) {
-            full?.stop(); noVocals?.stop()
-            playing = false
-            position = duration
-            timer?.invalidate(); timer = nil
+        if position >= duration - 0.05 || (full?.isPlaying == false && noVocals?.isPlaying == false) {
+            finishTrack()
+            return
         }
         if Date().timeIntervalSince(lastNowPlayingAt) >= 1 {
             updateNowPlaying()
