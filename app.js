@@ -66,7 +66,6 @@ function updateLyricsOffset(value){
   $('lyrics-offset-value').textContent=`${n>=0?'+':''}${n.toFixed(1)} s`;
   karaokeView.setOffset(n);
   karaokeView.tick(gblMusicTime(),false);
-  if(typeof gblCarPlayNotify==='function')gblCarPlayNotify();
 }
 $('lyrics-offset').addEventListener('input',()=>{
   const n=Number($('lyrics-offset').value);
@@ -303,14 +302,126 @@ gblLibrarySort.addEventListener('change',()=>{
  try{localStorage.setItem('gbl-web-library-sort',gblLibrarySort.value);}catch(_){}
  drawLibrary();
 });
+// v2.64 — Feedback manuale unico, condiviso con il campo user_feedback del PC.
+const gblFeedbackLabels={good:'OK',average:'Così così',bad:'Da migliorare'};
+let gblFeedbackSaving=false;
+function gblFace(level){
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 36 36');
+  svg.setAttribute('aria-hidden','true');svg.classList.add('gbl-feedback-face');
+  const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx','18');
+  circle.setAttribute('cy','18');circle.setAttribute('r','15');
+  circle.setAttribute('fill',({good:'#67d895',average:'#ffce57',bad:'#f47b7b'})[level]||'#66788d');
+  circle.setAttribute('stroke','#142337');circle.setAttribute('stroke-width','1.25');svg.append(circle);
+  if(!level){
+    const q=document.createElementNS(ns,'text');q.setAttribute('x','18');q.setAttribute('y','24');
+    q.setAttribute('text-anchor','middle');q.setAttribute('font-size','19');
+    q.setAttribute('font-weight','bold');q.setAttribute('fill','#f6f8fc');
+    q.textContent='?';svg.append(q);return svg;
+  }
+  for(const x of [12,24]){
+    const eye=document.createElementNS(ns,'circle');eye.setAttribute('cx',String(x));
+    eye.setAttribute('cy','14');eye.setAttribute('r','1.9');eye.setAttribute('fill','#18263a');svg.append(eye);
+  }
+  const mouth=document.createElementNS(ns,'path');
+  mouth.setAttribute('d',level==='good'?'M10 21 Q18 30 26 21':level==='bad'?'M10 27 Q18 17 26 27':'M11 25 L25 25');
+  mouth.setAttribute('stroke','#18263a');mouth.setAttribute('stroke-width','2.5');
+  mouth.setAttribute('stroke-linecap','round');mouth.setAttribute('fill','none');svg.append(mouth);
+  return svg;
+}
+function gblFeedbackMessage(message,failed=false){
+  const el=$('library-feedback-message');el.textContent=message;el.classList.toggle('error',failed);
+}
+async function gblSaveFeedback(song,level){
+  if(gblFeedbackSaving)throw new Error('Salvataggio precedente ancora in corso.');
+  if(level!==null && !Object.hasOwn(gblFeedbackLabels,level))throw new Error('Feedback non valido.');
+  if(!tree?.index||!token)throw new Error('Ricollegare Google Drive.');
+  const jid=String(song.id||'');
+  if(!/^[a-f0-9]{32}$/.test(jid))throw new Error('ID brano non valido.');
+  const initial=Object.hasOwn(gblFeedbackLabels,song.user_feedback)?song.user_feedback:null;
+  gblFeedbackSaving=true;
+  try{
+    // Rileggere SEMPRE l'indice prima di modificare un solo campo: le altre
+    // canzoni, accordi e tombstone devono rimanere esattamente invariati.
+    const indexVersion=await (await api(`${API}/${encodeURIComponent(tree.index)}?fields=id,version`)).json();
+    const index=await jsonFile(tree.index);
+    const remote=Array.isArray(index.songs)?index.songs.find(x=>String(x.id)===jid):null;
+    if(!remote)throw new Error('Brano non più presente su Drive. Aggiornare la libreria.');
+    const remoteValue=Object.hasOwn(gblFeedbackLabels,remote.user_feedback)?remote.user_feedback:null;
+    if(remoteValue!==initial)throw new Error('Il feedback è stato modificato su un altro dispositivo. Aggiornare la libreria.');
+    if(remoteValue!==level){
+      if(level===null)delete remote.user_feedback;
+      else remote.user_feedback=level;
+      // Controllo aggiuntivo di versione prima dell'upload del manifest.
+      // Non sostituisce un lock server; in caso di errore il dato locale non cambia.
+      const latestVersion=await (await api(`${API}/${encodeURIComponent(tree.index)}?fields=id,version`)).json();
+      if(!indexVersion.version||String(indexVersion.version)!==String(latestVersion.version))
+        throw new Error('Libreria Drive modificata nel frattempo. Aggiornare la libreria e riprovare.');
+      await cloudSaveIndex(index);
+    }
+    // Conferma dal cloud: non dichiarare mai "salvato" senza verifica.
+    const verify=await jsonFile(tree.index);
+    const written=Array.isArray(verify.songs)?verify.songs.find(x=>String(x.id)===jid):null;
+    if(!written||((Object.hasOwn(gblFeedbackLabels,written.user_feedback)?written.user_feedback:null)!==level))
+      throw new Error('Verifica Drive non riuscita. Aggiornare la libreria.');
+    song.user_feedback=level;
+    gblFeedbackMessage('Feedback salvato su Google Drive. Anche il PC aggiornato alla v2.64 lo riceverà.');
+    return level;
+  }finally{gblFeedbackSaving=false;}
+}
+function gblMakeFeedbackControl(song){
+  const container=document.createElement('div');container.className='gbl-feedback-control';
+  const trigger=document.createElement('button');trigger.className='gbl-feedback-trigger';trigger.type='button';
+  const menu=document.createElement('div');menu.className='gbl-feedback-menu';menu.hidden=true;
+  menu.setAttribute('role','group');menu.setAttribute('aria-label','Giudizio sul brano');
+  const label=()=>{const v=Object.hasOwn(gblFeedbackLabels,song.user_feedback)?song.user_feedback:null;
+    const desc=v?'Feedback: '+gblFeedbackLabels[v]:'Feedback non assegnato';
+    trigger.title=desc+' · Tocca per cambiare';trigger.setAttribute('aria-label',song.name+': '+desc);
+    trigger.replaceChildren(gblFace(v));
+    menu.querySelectorAll('.gbl-feedback-option').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.level===v)));
+  };
+  const close=()=>{menu.hidden=true;trigger.setAttribute('aria-expanded','false');};
+  const choose=async(level)=>{
+    trigger.disabled=true;menu.querySelectorAll('button').forEach(el=>el.disabled=true);
+    try{await gblSaveFeedback(song,level);label();close();}
+    catch(err){gblFeedbackMessage('Feedback non salvato: '+err.message,true);close();}
+    finally{trigger.disabled=false;menu.querySelectorAll('button').forEach(el=>el.disabled=false);}
+  };
+  for(const [v,name] of [['good','OK'],['average','Così così'],['bad','Da migliorare']]){
+    const btn=document.createElement('button');btn.type='button';btn.className='gbl-feedback-option';
+    btn.dataset.level=v;btn.append(gblFace(v),document.createTextNode(name));
+    btn.addEventListener('click',()=>choose(v));menu.append(btn);
+  }
+  const reset=document.createElement('button');reset.type='button';reset.className='gbl-feedback-reset';
+  reset.textContent='Senza giudizio';reset.addEventListener('click',()=>choose(null));menu.append(reset);
+  trigger.setAttribute('aria-haspopup','true');trigger.setAttribute('aria-expanded','false');
+  trigger.addEventListener('click',()=>{
+    const opening=menu.hidden;
+    document.querySelectorAll('#library .gbl-feedback-menu').forEach(x=>{
+      x.hidden=true;x.parentElement?.querySelector('.gbl-feedback-trigger')?.setAttribute('aria-expanded','false');
+    });
+    menu.hidden=!opening;trigger.setAttribute('aria-expanded',String(opening));
+  });
+  container.addEventListener('keydown',ev=>{if(ev.key==='Escape'){close();trigger.focus();}});
+  container.append(trigger,menu);label();return container;
+}
+document.addEventListener('click',event=>{
+  if(!event.target.closest('#library .gbl-feedback-control')){
+    document.querySelectorAll('#library .gbl-feedback-menu').forEach(x=>{
+      x.hidden=true;x.parentElement?.querySelector('.gbl-feedback-trigger')?.setAttribute('aria-expanded','false');
+    });
+  }
+});
 function drawLibrary(){
   $('library').replaceChildren();
   if(!songs.length){$('library').textContent='Nessuna base ancora disponibile. Avvii l’elaborazione dal PC oppure carichi un brano in coda.';return;}
   for(const s of gblSortedSongs()){
+    const entry=document.createElement('div');entry.className='gbl-song-entry';
     const btn=document.createElement('button');btn.className='song-row';btn.type='button';
     const a=document.createElement('strong');a.textContent=s.name||'Brano';
     const b=document.createElement('small');b.textContent=`${fmt(s.duration)} · MP3`;btn.append(a,b);
-    btn.addEventListener('click',()=>openSong(s));$('library').append(btn);
+    btn.addEventListener('click',()=>openSong(s));
+    entry.append(btn,gblMakeFeedbackControl(s));$('library').append(entry);
   }
 }
 function renderChords(chords){
@@ -338,7 +449,6 @@ async function openSong(song){
   renderChords(song.chords||[]);
   $('karaoke-panel').hidden=false;
   karaokeWords=[];
-  gblCarPlayNotify();
   updateLyricsOffset(0);
   $('sync-audio-check').hidden=true;
   karaokeView.render([], song.chords||[],Number(song.duration)||0);
@@ -362,7 +472,6 @@ async function loadKaraoke(song){
     try{const local=localStorage.getItem('gbl-lyrics-offset-'+song.id);if(local!==null)offset=Number(local)||0;}catch{}
     updateLyricsOffset(offset);
     karaokeView.render(karaokeWords,song.chords||[],Number(song.duration)||0);
-    gblCarPlayNotify();
     karaokeView.tick(gblMusicTime(),false);
     $('karaoke-status').textContent=karaokeWords.length
       ? `${karaokeWords.length} parole · Lingua: ${result.language||'automatica'} · Clicchi una parola per ascoltare da quel punto.`
@@ -498,25 +607,3 @@ cloudTrash.addEventListener('click',async()=>{
     await refreshAll();await cloudInventory();
   }catch(err){cloudStatus.textContent='Pulizia parziale o non riuscita: '+err.message+' Aggiorni l’elenco prima di riprovare.';}
 });
-
-
-// v2.64: adapter a sola lettura per il Companion CarPlay.
-// Niente token Google Drive, ID file audio o stream: solo tempi e parole.
-window.GBLCarPlaySource=function(){
-  if(!current)return null;
-  const audio=$('player');
-  const value=gblMusicTime();
-  return {
-    songId:String(current.id||''),
-    title:String(current.name||current.title||'Brano'),
-    duration:Number(current.duration)||Number(audio.duration)||0,
-    position:Number.isFinite(value)?value:0,
-    playing:!audio.paused&&!audio.ended,
-    offset:Number($('lyrics-offset').value)||0,
-    words:karaokeWords.map(w=>({text:String(w.text||''),start:Number(w.start)||0,end:Number(w.end)||0,line:Number(w.line)||0}))
-  };
-};
-function gblCarPlayNotify(){document.dispatchEvent(new Event('gbl:carplay-update'));}
-for(const eventName of ['play','pause','seeked','timeupdate','ended']){
-  $('player').addEventListener(eventName,gblCarPlayNotify);
-}

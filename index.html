@@ -10,46 +10,21 @@
 <title>Guitar Backing Leon · La tua libreria</title>
 <link href="./manifest.webmanifest" rel="manifest"/>
 <link href="./icon-192.png" rel="apple-touch-icon"/>
-<link href="./style.css?v=2.65" rel="stylesheet"/>
+<link href="./style.css?v=2.64" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.65"></script>
-<script defer="" src="./chord_extras.js?v=2.65"></script>
-<script defer="" src="./karaoke.js?v=2.65"></script>
-<script defer="" src="./transport_ui.js?v=2.65"></script>
-<script defer="" src="./continuous_mixer.js?v=2.65"></script>
-<script defer="" src="./screen_wake.js?v=2.65"></script>
-<script defer="" src="./app.js?v=2.65"></script>
-<script defer="" src="./carplay_protocol.js?v=2.65"></script>
-<script defer="" src="./carplay_bridge.js?v=2.65"></script>
-
-<style id="gbl-carplay-button-style">
-/* v2.65: pulsante diretto CarPlay, senza attivazione nascosta o reload. */
-#global-transport .gbl-carplay-button {
-  min-height:46px; padding:9px 12px; white-space:nowrap;
-  background:#116050; border-color:#59d8bb; color:#fff; font-weight:800;
-  touch-action:manipulation;
-}
-#gbl-carplay-status {
-  margin:6px 0 2px; padding:8px 10px; border-radius:9px;
-  background:#1c3749; color:#d1f6ee; font-size:12px; line-height:1.35;
-}
-#gbl-carplay-status[hidden] { display:none !important; }
-@media (max-width:760px) {
-  #global-transport .section-transport-actions {
-    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px;
-  }
-  #global-transport .gbl-carplay-button {
-    grid-column:1 / -1; width:100%; min-height:42px; font-size:13px; padding:7px 8px;
-  }
-  body.gbl-transport-docked .transport-home { min-height:164px; }
-}
-</style>
+<script defer="" src="./chord_tools.js?v=2.64"></script>
+<script defer="" src="./chord_extras.js?v=2.64"></script>
+<script defer="" src="./karaoke.js?v=2.64"></script>
+<script defer="" src="./transport_ui.js?v=2.64"></script>
+<script defer="" src="./continuous_mixer.js?v=2.64"></script>
+<script defer="" src="./screen_wake.js?v=2.64"></script>
+<script defer="" src="./app.js?v=2.64"></script>
 </head>
 <body>
 <main class="shell">
 <header>
-<div><h1>Guitar <span>Backing Leon</span></h1></div>
+<div><h1>Guitar <span>Backing Leon</span></h1><small class="gbl-web-version">VERSIONE 2.64</small></div>
 <div class="gbl-header-tools">
 <button type="button" class="gbl-wake-toggle" id="screen-wake-toggle" aria-pressed="true" title="Mantiene acceso lo schermo mentre l’app è visibile">☀ Schermo ON</button>
 <button class="primary" id="google-btn">Accedi con Google</button>
@@ -66,7 +41,6 @@
 <div class="section-transport-actions">
 <button aria-label="Riproduci il brano" class="secondary section-play" type="button">▶ Play</button>
 <button aria-label="Interrompi il brano" class="ghost section-stop" type="button">■ Stop</button>
-<button aria-label="Apri karaoke su CarPlay" class="secondary gbl-carplay-button" id="gbl-carplay-send" title="Invia il karaoke al Companion CarPlay" type="button">🚗 CarPlay</button>
 </div>
 <div aria-label="Mixer voce e chitarre" class="stem-buttons" role="group">
 <button aria-label="Chitarre disattivate" aria-pressed="false" class="stem-toggle" id="toggle-guitar" type="button">🎸 <span class="stem-name">Chitarre</span><span class="stem-state">OFF</span></button>
@@ -80,13 +54,13 @@
 </div>
 </div></div><audio id="player" playsinline="" preload="metadata"></audio>
 <p class="mixer-note" id="mixer-note" role="status">Preparazione mixer...</p>
-<p class="gbl-carplay-status" id="gbl-carplay-status" role="status" aria-live="polite" hidden></p>
 </section><section class="panel" id="library-panel"><div class="section-head"><h2>Libreria musicale</h2><button aria-label="Aggiorna libreria" class="secondary" id="refresh" title="Aggiorna libreria" type="button">↻</button><button aria-controls="library-content" aria-expanded="true" class="secondary gbl-library-toggle" id="library-toggle" type="button">▾ Mostra / nascondi</button></div><div id="library-content">
 <label class="gbl-library-sort-label">Ordina per <select aria-label="Ordina libreria" id="library-sort">
 <option value="title-asc">Titolo A–Z</option><option value="title-desc">Titolo Z–A</option>
 <option value="artist-asc">Artista A–Z</option><option value="artist-desc">Artista Z–A</option>
 </select></label>
 <div class="song-list" id="library"><p>Nessuna canzone.</p></div>
+<p class="hint" id="library-feedback-message" aria-live="polite" role="status">Faccina: verde = OK, gialla = così così, rossa = da migliorare. Tocca per scegliere.</p>
 </div></section>
 <section class="panel karaoke-panel" hidden="" id="karaoke-panel">
 <div class="panel-heading"><h2>Testo karaoke + accordi</h2>
@@ -141,7 +115,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </details>
 </section>
-<footer>Guitar Backing Leon · <span id="web-build">Web 2.65</span></footer>
+<footer>Guitar Backing Leon · <span id="web-build">Web 2.64</span></footer>
 </main>
 </body>
 </html>

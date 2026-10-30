@@ -858,3 +858,30 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
   background:#e5aa50;
   cursor:help;
 }
+
+/* v2.64 — Testo karaoke mobile sempre maiuscolo; gli accordi restano invariati. */
+#karaoke-panel .karaoke-time-word,
+#karaoke-panel .karaoke-word,
+#karaoke-panel .karaoke-fixed-words .karaoke-instrumental-label {
+  text-transform:uppercase!important;
+}
+/* v2.64 — Feedback tattile per ogni brano, persistente nella libreria Drive. */
+#library .gbl-song-entry{display:flex;align-items:center;gap:8px;min-width:0;position:relative;}
+#library .gbl-song-entry>.song-row{flex:1 1 auto;min-width:0;margin:0;overflow-wrap:anywhere;}
+#library .gbl-song-entry>.song-row strong{max-width:100%;text-wrap:wrap;}
+#library .gbl-feedback-control{position:relative;display:flex;flex:0 0 auto;align-items:center;z-index:2;}
+#library .gbl-feedback-trigger{display:grid;place-items:center;min-width:44px;min-height:44px;padding:5px;border:1px solid #526880;background:#202e42;border-radius:50%;cursor:pointer;touch-action:manipulation;}
+#library .gbl-feedback-trigger:focus-visible{outline:2px solid #7de0c6;outline-offset:2px;}
+#library .gbl-feedback-face{height:29px;width:29px;display:block;}
+#library .gbl-feedback-menu{position:absolute;z-index:30;top:calc(100% + 5px);right:0;min-width:194px;max-width:calc(100vw - 40px);padding:7px;background:#17263b;border:1px solid #566b81;border-radius:12px;box-shadow:0 12px 28px #0009;}
+#library .gbl-feedback-menu[hidden]{display:none!important;}
+#library .gbl-feedback-option,#library .gbl-feedback-reset{width:100%;min-height:44px;padding:7px 10px;border:0;background:transparent;color:#edf4fd;text-align:left;display:flex;align-items:center;gap:10px;border-radius:8px;cursor:pointer;font-size:.89rem;}
+#library .gbl-feedback-option:focus-visible,#library .gbl-feedback-reset:focus-visible,#library .gbl-feedback-option:hover,#library .gbl-feedback-reset:hover{background:#2b425b;}
+#library .gbl-feedback-option[aria-pressed="true"]{outline:1px solid #8bd4a6;}
+#library .gbl-feedback-option .gbl-feedback-face{width:26px;height:26px;}
+#library .gbl-feedback-reset{border-top:1px solid #4f6173;color:#bfcbd9;}
+#library .gbl-feedback-trigger:disabled,#library .gbl-feedback-option:disabled,#library .gbl-feedback-reset:disabled{opacity:.5;cursor:wait;}
+#library-feedback-message{margin:8px 0 0;min-height:1em;}
+@media(max-width:550px){#library .gbl-song-entry{gap:5px;}#library .gbl-song-entry>.song-row{padding:9px 10px;}#library .gbl-feedback-menu{right:0;}}
+
+.gbl-web-version{font-size:.73rem;color:#a1b4c9;letter-spacing:.06em;display:block;margin-top:-2px;}
