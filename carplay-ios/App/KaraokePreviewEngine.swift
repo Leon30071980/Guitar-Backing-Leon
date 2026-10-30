@@ -20,6 +20,9 @@ final class KaraokePreviewEngine: ObservableObject {
     private var wasTruncated = false
     private var lastWindowEnd = 0.0
     private var externalHasMore = false
+    private var audioControlled = false
+    private var lastPublishedPhrase = ""
+    private var lastPublishDate = Date.distantPast
 
     var current: String {
         guard let i = LeonPhrasing.index(at: position, in: phrases) else { return "" }
@@ -62,7 +65,30 @@ final class KaraokePreviewEngine: ObservableObject {
         lastWindowEnd = Double(fitted.last?.e ?? 0) / 10
     }
 
-    func start() { begin(shouldPlay: true) }
+    func start() { audioControlled = false; begin(shouldPlay: true) }
+
+    func audioStart() {
+        audioControlled = true
+        begin(shouldPlay: true)
+    }
+
+    func syncAudio(time: Double, isPlaying: Bool) {
+        // L'audio e' l'unica sorgente di verita' per il tempo karaoke.
+        audioControlled = true
+        position = min(max(0, time), duration)
+        let changed = playing != isPlaying
+        playing = isPlaying
+        lastDate = Date()
+        let phrase = current
+        if wasTruncated && position >= lastWindowEnd - 8 { rebuildLines() }
+        // L'aggiornamento del ContentState e' una richiesta; iOS puo' comunque
+        // diradare l'effettivo ridisegno della schermata di blocco / CarPlay.
+        if changed || (phrase != lastPublishedPhrase && Date().timeIntervalSince(lastPublishDate) >= 2.0) {
+            lastPublishedPhrase = phrase
+            lastPublishDate = Date()
+            Task { await publish() }
+        }
+    }
 
     private func begin(shouldPlay: Bool) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
@@ -85,7 +111,7 @@ final class KaraokePreviewEngine: ObservableObject {
         }
         timer?.invalidate()
         timer = nil
-        if shouldPlay {
+        if shouldPlay && !audioControlled {
             timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.tick() }
             }
@@ -127,7 +153,7 @@ final class KaraokePreviewEngine: ObservableObject {
     }
 
     func pause() {
-        if playing { advanceClock() }
+        if playing && !audioControlled { advanceClock() }
         playing = false
         timer?.invalidate()
         timer = nil
@@ -143,6 +169,8 @@ final class KaraokePreviewEngine: ObservableObject {
 
     func stop() {
         playing = false
+        audioControlled = false
+        lastPublishedPhrase = ""
         timer?.invalidate()
         timer = nil
         position = 0

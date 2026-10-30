@@ -11,6 +11,9 @@ struct LeonDriveSong: Decodable, Identifiable, Hashable {
     let name: String
     let duration: Double?
     let lyricsFileId: String?
+    let tracks: [String: String]?
+    // "full" e "no_vocals" sono le combinazioni realmente pubblicate dalla PWA.
+    var canPlay: Bool { (tracks?["full"]?.isEmpty == false) && (tracks?["no_vocals"]?.isEmpty == false) }
     var hasLyrics: Bool { !(lyricsFileId ?? "").isEmpty }
 }
 
@@ -179,6 +182,50 @@ final class GoogleDriveLibrary: ObservableObject {
         return try await fetchFile(lyricsId)
     }
 
+    // Scarica i due MP3 nell'area cache PRIVATA di iOS, senza link pubblici
+    // né token nella URL. Può riutilizzare il file tra un avvio e l'altro.
+    func downloadTrack(for song: LeonDriveSong, mix: String) async throws -> URL {
+        guard mix == "full" || mix == "no_vocals",
+              let fileId = song.tracks?[mix], Self.validFileId(fileId) else {
+            throw DriveError.message("Traccia \(mix) non presente su Drive: rielabora il brano sul PC.")
+        }
+        let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("GuitarLeonAudio", isDirectory: true)
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        let target = cache.appendingPathComponent(fileId).appendingPathExtension("mp3")
+        if FileManager.default.fileExists(atPath: target.path) {
+            if let size = (try? target.resourceValues(forKeys: [.fileSizeKey]).fileSize), size > 1024 {
+                return target
+            }
+            try? FileManager.default.removeItem(at: target)
+        }
+        let bearer = try await authorizedToken()
+        var c = URLComponents(string: filesAPI + "/" + fileId)!
+        c.queryItems = [URLQueryItem(name: "alt", value: "media")]
+        var req = URLRequest(url: c.url!)
+        req.setValue("Bearer " + bearer, forHTTPHeaderField: "Authorization")
+        req.timeoutInterval = 180
+        let (downloaded, response) = try await URLSession.shared.download(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard status == 200 else {
+            throw DriveError.message("Download audio Drive non riuscito (HTTP \(status)).")
+        }
+        let size = (try downloaded.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        guard size > 1024 && size <= 250_000_000 else {
+            throw DriveError.message("Dimensione audio non valida o superiore a 250 MB.")
+        }
+        // Il download non deve mai modificare i file Google Drive.
+        if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
+        try FileManager.default.moveItem(at: downloaded, to: target)
+        return target
+    }
+
+    private static func validFileId(_ id: String) -> Bool {
+        !id.isEmpty && id.count < 200 && id.allSatisfy {
+            $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-")
+        }
+    }
+
     private func readLibrary() async throws {
         // Stesso schema della PWA: root/Guitar Backing Leon/libreria.json
         let roots = try await list(parent: "root", name: "Guitar Backing Leon", mime: "application/vnd.google-apps.folder")
@@ -218,8 +265,7 @@ final class GoogleDriveLibrary: ObservableObject {
     }
 
     private func fetchFile(_ id: String) async throws -> Data {
-        guard !id.isEmpty, id.count < 200,
-              id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-") }) else {
+        guard Self.validFileId(id) else {
             throw DriveError.message("ID file Drive non valido.")
         }
         var c = URLComponents(string: filesAPI + "/" + id)!

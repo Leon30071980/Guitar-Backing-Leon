@@ -1,4 +1,4 @@
-# Guitar Leon CarPlay Companion v1.4
+# Guitar Leon CarPlay Companion v1.5
 
 Progetto iPhone nativo **incluso nel repository di Guitar Backing Leon**.
 
@@ -29,9 +29,22 @@ L'IPA **non è firmato e non è direttamente installabile**. Occorre firmarlo/in
 - La dimensione massima disponibile dipende dall'auto e da iOS. L'interfaccia è ottimizzata per `ActivityFamily.small`.
 - Non pubblicare i file `lyrics.json` reali né credenziali nel repository.
 
-Versioni: **PWA v2.65 (invariata)**, **Companion v1.4**, motore PC originale **v2.63 (invariato)**.
+Versioni: **PWA v2.65 (invariata)**, **Companion v1.5**, motore PC originale **v2.63 (invariato)**.
 
 Fonti:
 - https://developer.apple.com/design/human-interface-guidelines/live-activities
 - https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities
 - https://developer.apple.com/documentation/activitykit/starting-and-updating-live-activities-with-activitykit-push-notifications
+
+
+## Modifiche v1.5 (audio nativo)
+
+- Carica dal medesimo indice Drive le due tracce `tracks.full` e `tracks.no_vocals`.
+- Scarica i due MP3 nella cache privata iPhone; nessun audio viene pubblicato su GitHub.
+- Riproduzione con AVAudioPlayer e AVAudioSession `.playback`, background mode `audio`.
+- Entrambe le basi sono temporizzate insieme, una silenziata. `Voce ON/OFF` cambia soltanto il volume; chitarra sempre ON.
+- Testo agganciato al `currentTime` audio, non a un timer dimostrativo.
+- I cambi del testo in Live Activity sono richieste ActivityKit best-effort: iOS puo' rallentarli o non mostrarli a schermo bloccato.
+- Registrato il titolo sul centro di controllo iOS con comandi Play e Pausa standard.
+
+Verificare con dispositivo reale: MP3 doppi per almeno 3 minuti; cuffie/Bluetooth; blocco schermo; Live Activity; CarPlay da FERMI. Questo pacchetto contiene sorgenti, non una IPA firmata.
