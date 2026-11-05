@@ -258,7 +258,16 @@ async function refreshAll(){if(refreshing)return;refreshing=true;try{
   $('queue').textContent=valid.length?`${valid.length} brano/i in attesa o in elaborazione sul PC: ${valid.map(x=>x.name).join(' · ')}`:'Nessun brano in attesa.';
 } catch(err){notice(err.message,true);} finally{refreshing=false;}}
 $('refresh').addEventListener('click',refreshAll);
-const gblLibrarySort = $('library-sort');
+// v2.67 — Una riga per canzone: Artista | Titolo | Feedback.
+// Il filtro opera soltanto in memoria; non scrive né modifica Google Drive.
+let gblLibraryOrder='artist-asc';
+let gblLibraryQuery='';
+let gblLibraryArtistFilter='';
+let gblLibraryFeedbackFilter='all';
+const gblSearch=$('library-search');
+const gblClearFilters=$('library-clear-filters');
+const gblFeedbackFilterButton=$('library-filter-feedback');
+const gblFeedbackFilterMenu=$('library-feedback-filter-menu');
 // Libreria compatta dopo la scelta del brano, riapribile in qualunque momento.
 const gblLibraryContent=$('library-content');
 const gblLibraryToggle=$('library-toggle');
@@ -284,25 +293,87 @@ $('player').addEventListener('canplay',()=>{gblAudioLoaded=true;gblUpdateSongLoa
 $('player').addEventListener('error',()=>{if(current){gblMixerFault='Audio non disponibile';gblUpdateSongLoading();}});
 
 const gblCollator = new Intl.Collator('it',{numeric:true,sensitivity:'base'});
-try{gblLibrarySort.value=localStorage.getItem('gbl-web-library-sort')||'title-asc';}catch(_){}
+try{
+  const stored=localStorage.getItem('gbl-web-library-v267-order');
+  if(['title-asc','title-desc','artist-asc','artist-desc'].includes(stored))gblLibraryOrder=stored;
+}catch(_){ }
 function gblSongParts(song){
  const name=String(song.name||'').replace(/\.(mp3|wav|flac|m4a|ogg|aac)$/i,'').trim();
  const chunks=name.split(/\s+[-–—]\s+/);
  return {artist:String(song.lyrics_artist||song.artist||(chunks.length>1?chunks[0]:'')),
          title:String(song.lyrics_title||song.title||(chunks.length>1?chunks.slice(1).join(' - '):name)),name};
 }
-function gblSortedSongs(){
- const mode=gblLibrarySort.value||'title-asc',field=mode.startsWith('artist-')?'artist':'title',mult=mode.endsWith('desc')?-1:1;
- return [...songs].sort((a,b)=>{
+function gblFeedbackValue(song){
+ return ['good','average','bad'].includes(song.user_feedback)?song.user_feedback:'none';
+}
+function gblNormalizeFilter(value){
+ return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it');
+}
+function gblVisibleSongs(){
+ const mode=gblLibraryOrder,field=mode.startsWith('artist-')?'artist':'title',mult=mode.endsWith('desc')?-1:1;
+ const query=gblNormalizeFilter(gblLibraryQuery.trim());
+ return songs.filter(song=>{
+   const p=gblSongParts(song);
+   if(gblLibraryArtistFilter && p.artist!==gblLibraryArtistFilter)return false;
+   if(gblLibraryFeedbackFilter!=='all' && gblFeedbackValue(song)!==gblLibraryFeedbackFilter)return false;
+   return !query || gblNormalizeFilter(p.artist+' '+p.title).includes(query);
+ }).sort((a,b)=>{
    const aa=gblSongParts(a),bb=gblSongParts(b);
    return mult*(gblCollator.compare(aa[field]||aa.name,bb[field]||bb.name)||gblCollator.compare(aa.name,bb.name));
  });
 }
-gblLibrarySort.addEventListener('change',()=>{
- try{localStorage.setItem('gbl-web-library-sort',gblLibrarySort.value);}catch(_){}
+function gblUpdateLibraryFilters(visibleCount){
+ const active=Boolean(gblLibraryQuery||gblLibraryArtistFilter||gblLibraryFeedbackFilter!=='all');
+ gblClearFilters.hidden=!active;
+ for(const [field,id] of [['artist','library-sort-artist'],['title','library-sort-title']]){
+   const btn=$(id),selected=gblLibraryOrder.startsWith(field+'-');
+   btn.setAttribute('aria-pressed',String(selected));
+   btn.querySelector('.gbl-sort-indicator').textContent=selected?(gblLibraryOrder.endsWith('asc')?'↑':'↓'):'↕';
+ }
+ gblFeedbackFilterButton.dataset.active=String(gblLibraryFeedbackFilter!=='all');
+ gblFeedbackFilterMenu.querySelectorAll('[data-feedback-filter]').forEach(btn=>{
+   btn.setAttribute('aria-pressed',String(btn.dataset.feedbackFilter===gblLibraryFeedbackFilter));
+ });
+ const display={all:'',good:'verde',average:'giallo',bad:'rosso',none:'senza giudizio'};
+ const qualifiers=[];
+ if(gblLibraryArtistFilter)qualifiers.push('artista: '+gblLibraryArtistFilter);
+ if(gblLibraryFeedbackFilter!=='all')qualifiers.push('feedback: '+display[gblLibraryFeedbackFilter]);
+ if(gblLibraryQuery)qualifiers.push('ricerca: '+gblLibraryQuery);
+ $('library-count').textContent=visibleCount+' di '+songs.length+' brani'+(qualifiers.length?' · '+qualifiers.join(' · '):'');
+}
+function gblSetLibraryOrder(field){
+ const currentField=gblLibraryOrder.startsWith(field+'-');
+ gblLibraryOrder=field+'-'+(currentField&&gblLibraryOrder.endsWith('asc')?'desc':'asc');
+ try{localStorage.setItem('gbl-web-library-v267-order',gblLibraryOrder);}catch(_){ }
  drawLibrary();
+}
+$('library-sort-artist').addEventListener('click',()=>gblSetLibraryOrder('artist'));
+$('library-sort-title').addEventListener('click',()=>gblSetLibraryOrder('title'));
+gblSearch.addEventListener('input',()=>{gblLibraryQuery=gblSearch.value;drawLibrary();});
+gblClearFilters.addEventListener('click',()=>{
+ gblLibraryQuery='';gblLibraryArtistFilter='';gblLibraryFeedbackFilter='all';gblSearch.value='';
+ gblCloseFeedbackFilter();drawLibrary();
 });
-// v2.64 — Feedback manuale unico, condiviso con il campo user_feedback del PC.
+function gblCloseFeedbackFilter(){
+ gblFeedbackFilterMenu.hidden=true;gblFeedbackFilterButton.setAttribute('aria-expanded','false');
+}
+gblFeedbackFilterButton.addEventListener('click',()=>{
+ const opening=gblFeedbackFilterMenu.hidden;
+ gblFeedbackFilterMenu.hidden=!opening;gblFeedbackFilterButton.setAttribute('aria-expanded',String(opening));
+});
+gblFeedbackFilterMenu.querySelectorAll('[data-feedback-filter]').forEach(btn=>{
+ btn.addEventListener('click',()=>{
+   gblLibraryFeedbackFilter=btn.dataset.feedbackFilter;
+   gblCloseFeedbackFilter();drawLibrary();
+ });
+});
+gblFeedbackFilterMenu.addEventListener('keydown',ev=>{
+ if(ev.key==='Escape'){gblCloseFeedbackFilter();gblFeedbackFilterButton.focus();}
+});
+document.addEventListener('click',ev=>{
+ if(!ev.target.closest('.gbl-library-filter-wrap'))gblCloseFeedbackFilter();
+});
+// v2.65 — Feedback manuale unico, condiviso con il campo user_feedback del PC.
 const gblFeedbackLabels={good:'OK',average:'Così così',bad:'Da migliorare'};
 let gblFeedbackSaving=false;
 function gblFace(level){
@@ -365,7 +436,7 @@ async function gblSaveFeedback(song,level){
     if(!written||((Object.hasOwn(gblFeedbackLabels,written.user_feedback)?written.user_feedback:null)!==level))
       throw new Error('Verifica Drive non riuscita. Aggiornare la libreria.');
     song.user_feedback=level;
-    gblFeedbackMessage('Feedback salvato su Google Drive. Anche il PC aggiornato alla v2.64 lo riceverà.');
+    gblFeedbackMessage('Feedback salvato su Google Drive. Anche il PC aggiornato alla v2.65 lo riceverà.');
     return level;
   }finally{gblFeedbackSaving=false;}
 }
@@ -383,7 +454,7 @@ function gblMakeFeedbackControl(song){
   const close=()=>{menu.hidden=true;trigger.setAttribute('aria-expanded','false');};
   const choose=async(level)=>{
     trigger.disabled=true;menu.querySelectorAll('button').forEach(el=>el.disabled=true);
-    try{await gblSaveFeedback(song,level);label();close();}
+    try{await gblSaveFeedback(song,level);label();close();drawLibrary();}
     catch(err){gblFeedbackMessage('Feedback non salvato: '+err.message,true);close();}
     finally{trigger.disabled=false;menu.querySelectorAll('button').forEach(el=>el.disabled=false);}
   };
@@ -413,16 +484,37 @@ document.addEventListener('click',event=>{
   }
 });
 function drawLibrary(){
-  $('library').replaceChildren();
-  if(!songs.length){$('library').textContent='Nessuna base ancora disponibile. Avvii l’elaborazione dal PC oppure carichi un brano in coda.';return;}
-  for(const s of gblSortedSongs()){
-    const entry=document.createElement('div');entry.className='gbl-song-entry';
-    const btn=document.createElement('button');btn.className='song-row';btn.type='button';
-    const a=document.createElement('strong');a.textContent=s.name||'Brano';
-    const b=document.createElement('small');b.textContent=`${fmt(s.duration)} · MP3`;btn.append(a,b);
-    btn.addEventListener('click',()=>openSong(s));
-    entry.append(btn,gblMakeFeedbackControl(s));$('library').append(entry);
+  const library=$('library');library.replaceChildren();
+  if(!songs.length){
+    library.textContent='Nessuna base ancora disponibile. Avvii l’elaborazione dal PC oppure carichi un brano in coda.';
+    gblUpdateLibraryFilters(0);return;
   }
+  const visible=gblVisibleSongs();
+  for(const song of visible){
+    const parts=gblSongParts(song);
+    const entry=document.createElement('div');entry.className='gbl-song-entry';
+    const artist=document.createElement('button');artist.className='gbl-library-artist';artist.type='button';
+    artist.textContent=parts.artist||'—';
+    artist.title=parts.artist?'Filtra per '+parts.artist:'Artista non specificato';
+    artist.setAttribute('aria-label',parts.artist?'Filtra per artista '+parts.artist:'Artista non specificato');
+    artist.disabled=!parts.artist;
+    artist.addEventListener('click',()=>{
+      gblLibraryArtistFilter=gblLibraryArtistFilter===parts.artist?'':parts.artist;
+      drawLibrary();
+    });
+    const title=document.createElement('button');title.className='gbl-library-track';title.type='button';
+    title.textContent=parts.title||parts.name||'Brano';title.title='Riproduci '+(parts.title||parts.name);
+    title.setAttribute('aria-label','Riproduci '+(parts.title||parts.name));
+    title.addEventListener('click',()=>openSong(song));
+    const feedback=document.createElement('div');feedback.className='gbl-library-feedback-cell';
+    feedback.append(gblMakeFeedbackControl(song));
+    entry.append(artist,title,feedback);library.append(entry);
+  }
+  if(!visible.length){
+    const empty=document.createElement('p');empty.className='gbl-library-empty';
+    empty.textContent='Nessun brano corrisponde ai filtri selezionati.';library.append(empty);
+  }
+  gblUpdateLibraryFilters(visible.length);
 }
 function renderChords(chords){
   $('chords').replaceChildren();

@@ -8,28 +8,28 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="Guitar Backing Leon" name="apple-mobile-web-app-title"/>
 <title>Guitar Backing Leon · La tua libreria</title>
-<link href="./manifest.webmanifest?v=2.66" rel="manifest"/>
-<link href="./favicon.ico?v=2.66" rel="shortcut icon" type="image/x-icon"/>
-<link href="./favicon-32.png?v=2.66" rel="icon" type="image/png" sizes="32x32"/>
-<link href="./favicon-16.png?v=2.66" rel="icon" type="image/png" sizes="16x16"/>
-<link href="./apple-touch-icon.png?v=2.66" rel="apple-touch-icon" sizes="180x180"/>
-<link href="./style.css?v=2.66" rel="stylesheet"/>
+<link href="./manifest.webmanifest?v=2.67" rel="manifest"/>
+<link href="./favicon.ico?v=2.67" rel="shortcut icon" type="image/x-icon"/>
+<link href="./favicon-32.png?v=2.67" rel="icon" type="image/png" sizes="32x32"/>
+<link href="./favicon-16.png?v=2.67" rel="icon" type="image/png" sizes="16x16"/>
+<link href="./apple-touch-icon.png?v=2.67" rel="apple-touch-icon" sizes="180x180"/>
+<link href="./style.css?v=2.67" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
 <script defer="" src="./config.js"></script>
-<script defer="" src="./chord_tools.js?v=2.66"></script>
-<script defer="" src="./chord_extras.js?v=2.66"></script>
-<script defer="" src="./karaoke.js?v=2.66"></script>
-<script defer="" src="./transport_ui.js?v=2.66"></script>
-<script defer="" src="./continuous_mixer.js?v=2.66"></script>
-<script defer="" src="./screen_wake.js?v=2.66"></script>
-<script defer="" src="./app.js?v=2.66"></script>
+<script defer="" src="./chord_tools.js?v=2.67"></script>
+<script defer="" src="./chord_extras.js?v=2.67"></script>
+<script defer="" src="./karaoke.js?v=2.67"></script>
+<script defer="" src="./transport_ui.js?v=2.67"></script>
+<script defer="" src="./continuous_mixer.js?v=2.67"></script>
+<script defer="" src="./screen_wake.js?v=2.67"></script>
+<script defer="" src="./app.js?v=2.67"></script>
 </head>
 <body>
 <main class="shell">
 <header>
 <div style="display:flex;align-items:center;gap:11px;min-width:0">
-<img src="./icon-192.png?v=2.66" alt="" aria-hidden="true" width="46" height="46" style="display:block;width:46px;height:46px;border-radius:12px;flex-shrink:0"/>
-<div style="min-width:0"><h1>Guitar <span>Backing Leon</span></h1><small class="gbl-web-version">VERSIONE 2.66</small></div>
+<img src="./icon-192.png?v=2.67" alt="" aria-hidden="true" width="46" height="46" style="display:block;width:46px;height:46px;border-radius:12px;flex-shrink:0"/>
+<div style="min-width:0"><h1>Guitar <span>Backing Leon</span></h1><small class="gbl-web-version">VERSIONE 2.67</small></div>
 </div>
 <div class="gbl-header-tools">
 <button type="button" class="gbl-wake-toggle" id="screen-wake-toggle" aria-pressed="true" title="Mantiene acceso lo schermo mentre l’app è visibile">☀ Schermo ON</button>
@@ -61,12 +61,26 @@
 </div></div><audio id="player" playsinline="" preload="metadata"></audio>
 <p class="mixer-note" id="mixer-note" role="status">Preparazione mixer...</p>
 </section><section class="panel" id="library-panel"><div class="section-head"><h2>Libreria musicale</h2><button aria-label="Aggiorna libreria" class="secondary" id="refresh" title="Aggiorna libreria" type="button">↻</button><button aria-controls="library-content" aria-expanded="true" class="secondary gbl-library-toggle" id="library-toggle" type="button">▾ Mostra / nascondi</button></div><div id="library-content">
-<label class="gbl-library-sort-label">Ordina per <select aria-label="Ordina libreria" id="library-sort">
-<option value="title-asc">Titolo A–Z</option><option value="title-desc">Titolo Z–A</option>
-<option value="artist-asc">Artista A–Z</option><option value="artist-desc">Artista Z–A</option>
-</select></label>
-<div class="song-list" id="library"><p>Nessuna canzone.</p></div>
-<p class="hint" id="library-feedback-message" aria-live="polite" role="status">Faccina: verde = OK, gialla = così così, rossa = da migliorare. Tocca per scegliere.</p>
+<div class="gbl-library-toolbar">
+<label class="gbl-library-search" for="library-search"><span class="gbl-visually-hidden">Cerca artista o titolo</span><input id="library-search" type="search" placeholder="Cerca artista o titolo…" autocomplete="off" aria-label="Cerca artista o titolo"/></label>
+<button id="library-clear-filters" class="secondary gbl-library-reset" type="button" hidden>✕ Cancella filtri</button>
+</div>
+<div class="gbl-library-columns" role="group" aria-label="Colonne della libreria">
+<button id="library-sort-artist" class="gbl-library-column-head" type="button" aria-label="Ordina per artista" aria-pressed="true">Artista <span aria-hidden="true" class="gbl-sort-indicator">↑</span></button>
+<button id="library-sort-title" class="gbl-library-column-head" type="button" aria-label="Ordina per titolo" aria-pressed="false">Titolo <span aria-hidden="true" class="gbl-sort-indicator">↕</span></button>
+<div class="gbl-library-filter-wrap">
+<button id="library-filter-feedback" class="gbl-library-column-head gbl-library-feedback-head" type="button" aria-expanded="false" aria-controls="library-feedback-filter-menu" aria-label="Filtra per feedback">Feedback <span aria-hidden="true">▾</span></button>
+<div id="library-feedback-filter-menu" class="gbl-library-filter-menu" role="group" aria-label="Filtra canzoni per feedback" hidden>
+<button type="button" data-feedback-filter="all" aria-pressed="true">Tutti i giudizi</button>
+<button type="button" data-feedback-filter="good" aria-pressed="false">😊 Verdi · OK</button>
+<button type="button" data-feedback-filter="average" aria-pressed="false">😐 Gialli · Così così</button>
+<button type="button" data-feedback-filter="bad" aria-pressed="false">☹️ Rossi · Da migliorare</button>
+<button type="button" data-feedback-filter="none" aria-pressed="false">? Senza giudizio</button>
+</div></div>
+</div>
+<div class="song-list gbl-library-table" id="library" aria-label="Elenco brani"><p>Nessuna canzone.</p></div>
+<p class="gbl-library-count" id="library-count" role="status" aria-live="polite"></p>
+<p class="hint" id="library-feedback-message" aria-live="polite" role="status">Tocca un titolo per riprodurre, un artista per filtrare o una faccina per cambiare giudizio. Usa «Feedback» per filtrare per colore.</p>
 </div></section>
 <section class="panel karaoke-panel" hidden="" id="karaoke-panel">
 <div class="panel-heading"><h2>Testo karaoke + accordi</h2>
@@ -121,7 +135,7 @@
 <p class="hint">Non è possibile eliminare le cartelle principali né libreria.json. Le eliminazioni dalla libreria non saranno ripubblicate dal PC.</p>
 </details>
 </section>
-<footer>Guitar Backing Leon · <span id="web-build">Web 2.66</span></footer>
+<footer>Guitar Backing Leon · <span id="web-build">Web 2.67</span></footer>
 </main>
 </body>
 </html>

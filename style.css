@@ -885,3 +885,56 @@ html:not(.gbl-expanded-active),body:not(.gbl-expanded-active){overflow-x:clip!im
 @media(max-width:550px){#library .gbl-song-entry{gap:5px;}#library .gbl-song-entry>.song-row{padding:9px 10px;}#library .gbl-feedback-menu{right:0;}}
 
 .gbl-web-version{font-size:.73rem;color:#a1b4c9;letter-spacing:.06em;display:block;margin-top:-2px;}
+
+/* v2.67 — Libreria web in lista Artista | Titolo | Feedback, responsive. */
+.gbl-visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#library-panel .gbl-library-toolbar{display:flex;align-items:center;gap:8px;margin:7px 0 10px;flex-wrap:wrap}
+#library-panel .gbl-library-search{flex:1 1 180px;min-width:0}
+#library-panel .gbl-library-search input{width:100%;min-width:0;min-height:39px;padding:8px 11px;border:1px solid #416575;background:#101e2e;color:#f1faf9;border-radius:9px;font:inherit;font-size:.87rem}
+#library-panel .gbl-library-reset{font-size:.78rem;padding:7px 10px;min-height:39px}
+#library-panel .gbl-library-reset[hidden]{display:none}
+#library-panel .gbl-library-columns,#library .gbl-song-entry{display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1.52fr) 82px;align-items:center;gap:7px;min-width:0}
+#library-panel .gbl-library-columns{margin:0 0 5px;padding:0 8px 5px;border-bottom:1px solid #426078}
+#library-panel .gbl-library-column-head{background:transparent;border:0;border-radius:5px;color:#91dfd5;font-family:inherit;font-size:.78rem;line-height:1.2;font-weight:750;padding:8px 2px;text-align:left;cursor:pointer;min-width:0}
+#library-panel .gbl-library-column-head[aria-pressed=true]{color:#c8fff0}
+#library-panel .gbl-library-column-head:focus-visible{outline:2px solid #7de0c6;outline-offset:2px}
+#library-panel .gbl-sort-indicator{opacity:.8;font-size:.85rem}
+#library-panel .gbl-library-filter-wrap{position:relative;min-width:0;z-index:4}
+#library-panel .gbl-library-feedback-head{text-align:center;width:100%;font-size:.73rem;white-space:nowrap}
+#library-panel .gbl-library-feedback-head[data-active=true]{background:#176756;color:#fff}
+#library-panel .gbl-library-filter-menu{position:absolute;top:100%;right:0;z-index:60;width:max-content;max-width:calc(100vw - 34px);padding:6px;border:1px solid #536e80;border-radius:10px;box-shadow:0 12px 30px #000b;background:#17283a}
+#library-panel .gbl-library-filter-menu[hidden]{display:none!important}
+#library-panel .gbl-library-filter-menu button{display:block;width:100%;min-height:41px;padding:8px 12px;border:0;border-radius:7px;background:transparent;color:#edf4fd;text-align:left;font:inherit;font-size:.84rem;cursor:pointer}
+#library-panel .gbl-library-filter-menu button:hover,#library-panel .gbl-library-filter-menu button:focus-visible{background:#29495b}
+#library-panel .gbl-library-filter-menu button[aria-pressed=true]{background:#195747;color:#d4fff0}
+#library.song-list.gbl-library-table{display:flex;flex-direction:column;gap:5px;overflow:visible}
+#library .gbl-song-entry{border:1px solid #30465a;border-radius:9px;background:#182739;padding:4px 8px;position:relative;overflow:visible}
+#library .gbl-song-entry:nth-child(even){background:#1b2d40}
+#library .gbl-song-entry .gbl-library-artist,#library .gbl-song-entry .gbl-library-track{padding:7px 2px;min-width:0;min-height:43px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;background:none;border:0;color:#f2f8fc;text-align:left;font:inherit;line-height:1.34;cursor:pointer}
+#library .gbl-song-entry .gbl-library-artist{color:#8ddccf;font-size:.85rem;font-weight:600}
+#library .gbl-song-entry .gbl-library-track{font-size:.9rem;font-weight:750}
+#library .gbl-song-entry .gbl-library-artist:hover,#library .gbl-song-entry .gbl-library-track:hover{text-decoration:underline;text-decoration-color:#5acbb6}
+#library .gbl-song-entry .gbl-library-artist:focus-visible,#library .gbl-song-entry .gbl-library-track:focus-visible{outline:2px solid #7de0c6;outline-offset:1px;border-radius:4px}
+#library .gbl-library-feedback-cell{display:flex;align-items:center;justify-content:center;min-width:0}
+#library .gbl-library-feedback-cell .gbl-feedback-control{flex:0 0 auto}
+#library .gbl-library-feedback-cell .gbl-feedback-trigger{width:42px;height:42px;min-width:42px;min-height:42px;border-radius:12px;padding:5px}
+#library .gbl-library-feedback-cell .gbl-feedback-face{width:29px;height:29px}
+#library .gbl-library-feedback-cell .gbl-feedback-menu{right:-1px}
+#library-panel .gbl-library-count{margin:8px 0 0;color:#a9bbca;font-size:.76rem}
+#library .gbl-library-empty{margin:5px 0;padding:13px;color:#c1d3dc;text-align:center;font-size:.86rem}
+@media(max-width:550px){
+ #library-panel .gbl-library-columns,#library .gbl-song-entry{grid-template-columns:minmax(0,.93fr) minmax(0,1.57fr) 67px;gap:5px}
+ #library-panel .gbl-library-columns{padding:0 5px 4px}
+ #library-panel .gbl-library-column-head{font-size:.73rem}
+ #library-panel .gbl-library-feedback-head{font-size:.66rem}
+ #library .gbl-song-entry{padding:4px 5px;gap:4px}
+ #library .gbl-song-entry .gbl-library-artist{font-size:.77rem}
+ #library .gbl-song-entry .gbl-library-track{font-size:.82rem}
+ #library .gbl-library-feedback-cell .gbl-feedback-trigger{width:40px;height:40px;min-width:40px;min-height:40px}
+ #library .gbl-library-feedback-cell .gbl-feedback-menu{right:-3px}
+}
+@media(max-width:355px){
+ #library-panel .gbl-library-columns,#library .gbl-song-entry{grid-template-columns:minmax(0,.82fr) minmax(0,1.57fr) 63px;gap:3px}
+ #library .gbl-song-entry .gbl-library-artist{font-size:.72rem}
+ #library .gbl-song-entry .gbl-library-track{font-size:.77rem}
+}
