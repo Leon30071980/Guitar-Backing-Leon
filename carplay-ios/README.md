@@ -1,43 +1,42 @@
-# Leon Karaoke CarPlay Companion — v1.6
+# Leon Karaoke Companion — v1.7
 
-**Solo progetto iOS:** il programma PC v2.63 e la PWA web v2.65 restano invariati.
+**Pacchetto iOS per il repository esistente Guitar-Backing-Leon.** Le app PC v2.63 e web/PWA v2.65 non sono modificate.
 
-## Novità v1.6
+## Aggiornamento v1.7 rispetto alla v1.6
 
-- **Coda musicale da Drive:** cerca nella libreria, usa `+` per accodare più canzoni o `▶` per iniziare immediatamente. Non duplica i brani in Google Drive.
-- **Precedente / Successivo:** comandi nell'interfaccia e in `MPRemoteCommandCenter`, disponibili anche tramite i controlli multimediali standard di iOS/CarPlay se il sistema li espone. Premendo Precedente dopo 3 secondi dall'inizio, riparte il brano attuale; prima di 3 secondi passa a quello precedente.
-- **Fine brano:** passa automaticamente al successivo. La coda si ferma alla fine, senza riproduzione ciclica. I due MP3 restano sincronizzati, chitarra sempre ON, Voce ON/OFF invariato.
-- **Riordina / rimuovi:** frecce ↑/↓ per modificare l'ordine; `×` per togliere un brano non attivo. `Svuota prossimi` mantiene soltanto il brano attivo. La coda degli ID viene conservata su iPhone fra le aperture.
-- **Preparazione prossimo brano:** avvia il download del testo e dei due MP3 successivi mentre suona il brano attuale (al massimo un brano di anticipo). Può esserci attesa con rete lenta o iOS in background; non è garantito playback gapless.
-- **Offset parole:** slider −3...+3 s, passi 0,1 s, pulsanti ±0,1 s e Azzera. **+ ritarda le parole**, **− le anticipa**. La correzione agisce sulle parole sia in app sia nei dati della Live Activity, senza cambiare `currentTime` dell'audio; si salva su iPhone in UserDefaults.
-- **Stima latenza audio iOS:** route e `AVAudioSession.outputLatency` solo a titolo indicativo. Non rappresenta il ritardo reale completo di CarPlay; usare l'offset per la calibrazione percepita.
-- **Robustezza:** delegate AVAudioPlayer per passaggio automatico quando il timer UI viene rallentato; richieste MP3 duplicate deduplicate in memoria.
+1. **Ripresa e sincronizzazione:** quando Leon Karaoke torna in primo piano dopo il blocco schermo, un'altra app o il ritorno dalla Dashboard CarPlay, legge immediatamente il tempo reale di `AVAudioPlayer` e riallinea i versi. Prova inoltre a recuperare una Live Activity già attiva, invece di lasciare la schermata sulla frase iniziale. Le vecchie Live Activities senza lettore (dopo la terminazione del processo) vengono chiuse, anziché restare congelate.
+2. **Miglioramento background best-effort:** le richieste di aggiornamento ActivityKit vengono inviate a ogni cambio di frase, pausa/ripresa o salto, più un riancoraggio ogni ~8 secondi mentre il processo rimane eseguibile. La pubblicazione è serializzata per evitare di pubblicare aggiornamenti vecchi dopo quelli nuovi. Il timer MP3 è registrato nei `RunLoop.Mode.common`, riducendo le interruzioni durante gesture e scorrimento.
+3. **Libreria compatta:** dopo aver selezionato `▶` e avviato correttamente un brano, la lista Drive si chiude automaticamente. Rimane il pulsante **Apri libreria** per riaprirla; i comandi Play/Pausa, Voce ON/OFF, Precedente/Successivo e coda rimangono disponibili.
+4. **Offset facile da regolare:** cursore da 46pt in un'area di trascinamento da 68pt, pulsanti alti almeno 52pt per **−0,5 / −0,1 / Azzera / +0,1 / +0,5 s**. Rimane il range −3...+3 s, con passi 0,1 s, e il valore viene memorizzato. + ritarda le parole, − le anticipa.
 
-## Test pratico consigliato
+## Limite Apple non eliminato
 
-1. Collega Google Drive (OAuth iOS esistente). Aggiungi 3 canzoni in coda usando `+`.
-2. Avvia la coda, verifica ▶/⏸/■, chitarra sempre ON, Voce ON/OFF e Next/Prev.
-3. Verifica il passaggio automatico alla seconda alla fine della prima e i tasti Media Control da iPhone.
-4. Collega CarPlay **da fermo** e verifica riquadro Live Activity e controlli standard. Usa +0,5 s se le parole appaiono mezzo secondo prima dell'audio, o −0,5 s nel caso opposto.
-5. Blocca iPhone: gli aggiornamenti di Live Activity possono ancora essere diradati/sospesi da iOS. Non è garantito il cambio di ogni strofa su CarPlay.
+L'audio in background con la categoria `.playback` e `UIBackgroundModes=audio` permette di continuare la riproduzione quando iPhone si blocca. Questo **non garantisce** un aggiornamento per ogni parola o strofa della Live Activity: iOS decide quando eseguire l'app e ridisegnare i widget (incluso CarPlay). Se sospende il processo o il widget, la frase può ancora rimanere ferma nonostante il nuovo sistema di riallineamento. Per aggiornamenti indipendenti dalla vita del processo servirebbe un sistema di notifiche push ActivityKit/APNs con backend e permessi appropriati, ancora non implementato. Non si promette karaoke continuo sul display in ogni auto.
 
-## Distribuzione nello stesso GitHub
+L'offset temporale modifica solo la posizione del testo e non compensa un widget che viene sospeso per decine di secondi.
 
-1. In GitHub Desktop: seleziona il repository esistente e fai **Fetch origin / Pull origin**.
-2. Crea facoltativamente un branch `carplay-v1.6`.
-3. Estrai lo ZIP e copia **l'intera cartella `carplay-ios`** nella radice del repository locale, accettando la sostituzione dei file omonimi.
-4. Controlla che nelle modifiche compaiano **solo file in `carplay-ios/`**; non toccare `index.html`, `config.js`, `app.js`, `.github/workflows/`.
-5. Commit `Leon Karaoke Companion v1.6 - coda e offset`, poi Push/Publish; apri una Pull Request verso `main` se lavori su branch separato.
-6. GitHub > Actions > `CarPlay Companion - compila iOS (unsigned)` > Run workflow su `main` > scarica IPA unsigned. La firma/installazione resta esterna a GitHub.
-7. Usa lo stesso Apple ID e bundle ID per aggiornare l'app via una procedura di firma attendibile. Non disabilitare Defender né autorizzare programmi che ha segnalato senza ulteriori verifiche.
+## Test suggerito in auto, da fermo
 
-**Non cambiare la variabile GitHub Actions `GUITAR_GOOGLE_IOS_CLIENT_ID`.** Il Client ID viene inserito in `Info.plist` dal workflow esistente. Nessuna password o token deve essere pubblicata nel repository.
+1. Avvia 2 brani dalla libreria, controllando che la lista si chiuda al Play e possa essere riaperta.
+2. Regola l'offset con i tasti grandi ±0,5 e ±0,1 e verifica che cambi l'anteprima in app senza cambiare l'audio.
+3. Lascia suonare e blocca iPhone; annota se, dopo qualche minuto, la Live Activity smette di cambiare strofa mentre l'audio continua.
+4. Riapri Leon Karaoke: la frase nell'app deve tornare al punto corretto, **non** all'intro. Ripeti dopo una pausa e una ricerca nella canzone.
+5. Verifica su CarPlay. Se resta bloccato anche dopo aver riaperto l'app, annota iOS versione, minuto della canzone, e se l'audio è ancora in riproduzione.
 
-## Limiti dichiarati
+## GitHub Desktop
 
-- I test nella cartella `Tests` sono verifiche Linux/offline: la compilazione iOS richiede GitHub Actions/Xcode e la funzionalità va verificata su iPhone reale.
-- La Live Activity CarPlay non ha una dimensione liberamente espandibile e non garantisce aggiornamenti continui delle strofe a iPhone bloccato.
-- La latenza totale CarPlay non è misurabile automaticamente con certezza da `outputLatency`; l'offset manuale non corregge eventuali ritardi variabili o ridisegni sospesi.
-- I comandi Precedente/Successivo di iOS/CarPlay sono **comandi multimediali standard**; non sono pulsanti personalizzati dentro la Live Activity.
+1. Repository `Guitar-Backing-Leon` → **Fetch origin** / **Pull origin**.
+2. Fai una copia di sicurezza o crea un branch (`carplay-v1.7`).
+3. Estrai il pacchetto e copia **la cartella `carplay-ios`** nella radice del repository, unendo le cartelle e sostituendo i file omonimi. Il nuovo `App/LeonOffsetControl.swift` deve essere presente.
+4. In **Changes**, controlla che ogni modifica appartenga a `carplay-ios/`: NON sostituire il sito web, il PC, `config.js` né `.github/workflows`.
+5. Commit `Leon Karaoke Companion v1.7 - ripresa karaoke e interfaccia`, poi **Push origin**; se sul branch, Pull Request e merge su `main`.
+6. GitHub → **Actions** → `CarPlay Companion - compila iOS (unsigned)` → **Run workflow** su `main`. Scarica l'artefatto IPA, quindi usa un metodo di firma/installazione affidabile.
 
-Versione: **v1.6** (da v1.5). PC v2.63 invariata, web v2.65 invariata.
+Non occorre modificare `GUITAR_GOOGLE_IOS_CLIENT_ID`; la libreria Drive e la coda della v1.6 restano intatte.
+
+## Verifiche locali
+
+- `swiftc -frontend -parse` dei sorgenti Swift (solo sintassi; non sostituisce la compilazione Xcode).
+- Test Swift Foundation di coda e offset.
+- 27 controlli strutturali v1.7; test offline Drive, lettore e protocollo karaoke.
+- Compilazione Xcode, firma e comportamento reale iPhone/CarPlay **da verificare**.

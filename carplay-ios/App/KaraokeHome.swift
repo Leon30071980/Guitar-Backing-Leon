@@ -9,6 +9,8 @@ struct KaraokeHome: View {
     @State private var loadingSong = false
     @State private var queue = LeonQueueModel()
     @State private var search = ""
+    @State private var libraryExpanded = true
+    @Environment(\.scenePhase) private var scenePhase
     @State private var queueMessage = "Aggiungi uno o più brani alla coda."
 
     private let savedQueueKey = "leon.karaoke.queue.v1"
@@ -21,15 +23,26 @@ struct KaraokeHome: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 15) {
                 Text("Guitar Leon · CarPlay Karaoke").font(.title2.bold())
-                Text("v1.6 — Coda musicale + offset karaoke · chitarra sempre ON")
+                Text("v1.7 — Karaoke in background, libreria compatta e offset touch")
                     .font(.caption).foregroundStyle(.secondary)
 
                 HStack {
                     Text("Libreria Google Drive").font(.headline)
                     Spacer()
                     if drive.connected {
-                        Button("Aggiorna") { Task { await drive.refreshLibrary(); reconcileQueue() } }
-                            .disabled(drive.loading || loadingSong)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { libraryExpanded.toggle() }
+                        } label: {
+                            Label(libraryExpanded ? "Chiudi" : "Apri libreria",
+                                  systemImage: libraryExpanded ? "chevron.up" : "chevron.down")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityLabel(libraryExpanded ? "Chiudi elenco canzoni" : "Apri elenco canzoni")
+                        .disabled(drive.loading || loadingSong)
+                        if libraryExpanded {
+                            Button("Aggiorna") { Task { await drive.refreshLibrary(); reconcileQueue() } }
+                                .disabled(drive.loading || loadingSong)
+                        }
                     }
                 }
                 Text(drive.message).font(.footnote).foregroundStyle(.secondary)
@@ -45,7 +58,7 @@ struct KaraokeHome: View {
                 if drive.connected {
                     if drive.songs.isEmpty {
                         Text("Nessun brano visibile nell'indice.").font(.footnote)
-                    } else {
+                    } else if libraryExpanded {
                         TextField("Cerca una canzone", text: $search)
                             .textFieldStyle(.roundedBorder)
                         Text("▶ Riproduci subito · + Aggiungi alla coda")
@@ -80,11 +93,14 @@ struct KaraokeHome: View {
                             .padding(.vertical, 3)
                         }
                     }
-                    Button("Scollega Google") {
-                        audio.stop(); engine.stop(); drive.disconnect()
-                        queue = LeonQueueModel()
-                        persistQueue()
-                    }.font(.footnote).tint(.secondary)
+                    if libraryExpanded {
+                        Button("Scollega Google") {
+                            audio.stop(); engine.stop(); drive.disconnect()
+                            queue = LeonQueueModel()
+                            persistQueue()
+                            libraryExpanded = true
+                        }.font(.footnote).tint(.secondary)
+                    }
                 }
 
                 Divider()
@@ -205,22 +221,13 @@ struct KaraokeHome: View {
                 }
                 Text("Valore positivo: parole più tardi. Valore negativo: parole prima. La musica non cambia.")
                     .font(.footnote).foregroundStyle(.secondary)
-                Slider(value: Binding(get: { engine.offsetSeconds }, set: { engine.setOffset($0) }),
-                       in: -3...3, step: 0.1)
-                    .accessibilityLabel("Ritardo delle parole rispetto all'audio")
-                HStack {
-                    Button("− 0,1 s") { engine.setOffset(engine.offsetSeconds - 0.1) }
-                    Spacer()
-                    Button("Azzera") { engine.setOffset(0) }
-                    Spacer()
-                    Button("+ 0,1 s") { engine.setOffset(engine.offsetSeconds + 0.1) }
-                }.buttonStyle(.bordered)
+                LeonOffsetControl(value: engine.offsetSeconds, onChange: { engine.setOffset($0) })
                 Text("Uscita audio: \(audio.audioRoute). Latenza segnalata da iOS: ~\(Int(audio.systemOutputLatency * 1000)) ms (stima parziale, non ritardo totale CarPlay).")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("Offset salvato sull'iPhone. Provalo sul display CarPlay da fermo.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(engine.feedback).font(.footnote).foregroundStyle(.secondary)
-                Text("Le Live Activities possono rallentare o fermare il cambio frase con iPhone bloccato: CarPlay reale va verificato.")
+                Text("Al rientro nell’app il testo viene riallineato all’audio. iOS può comunque sospendere i ridisegni della Live Activity con schermo bloccato: nessun aggiornamento continuo è garantito su CarPlay.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding()
@@ -228,6 +235,19 @@ struct KaraokeHome: View {
         .onOpenURL { url in
             audio.stop()
             engine.applyBridgeURL(url)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                // Al ritorno dall'auto/blocco: lettura vera da AVAudioPlayer,
+                // recupero della Live Activity e pubblicazione immediata.
+                audio.refreshProgress()
+                engine.reconcileOnForeground(audioTime: audio.position,
+                                             isPlaying: audio.playing,
+                                             isReady: audio.ready)
+            } else if phase == .background {
+                audio.refreshProgress()
+                engine.snapshotOnBackground()
+            }
         }
         .task {
             queue = LeonQueueModel(ids: UserDefaults.standard.stringArray(forKey: savedQueueKey) ?? [])
@@ -239,6 +259,11 @@ struct KaraokeHome: View {
             audio.onPrevious = { Task { @MainActor in await previousSong() } }
             await drive.onLaunch()
             reconcileQueue()
+            // Se il processo iOS è stato ricreato, rimuove vecchie Live Activities
+            // non più connesse a un player: niente intro congelata permanente.
+            engine.reconcileOnForeground(audioTime: audio.position,
+                                         isPlaying: audio.playing,
+                                         isReady: audio.ready)
         }
         .fileImporter(isPresented: $importerVisible, allowedContentTypes: [.json]) { result in
             do {
@@ -303,7 +328,10 @@ struct KaraokeHome: View {
             engine.feedback = "Brano pronto: testo sincronizzato all'audio, offset applicato."
             if autoplay {
                 audio.play()
-                if audio.playing { engine.audioStart() }
+                if audio.playing {
+                    engine.audioStart()
+                    withAnimation(.easeInOut(duration: 0.2)) { libraryExpanded = false }
+                }
             }
             prefetchNextSong()
         } catch {

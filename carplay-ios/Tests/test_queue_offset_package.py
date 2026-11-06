@@ -26,7 +26,7 @@ checks=[
  ('correzione sola visualizzazione', 'displayedPosition' in engine),
  ('offset in Live Activity', 'anchorPosition: displayedPosition' in engine),
  ('offset persistente', 'UserDefaults.standard.set(rounded' in engine),
- ('offset regolabile', 'in: -3...3, step: 0.1' in ui),
+ ('offset touch dedicato', 'LeonOffsetControl(value: engine.offsetSeconds' in ui),
  ('offset senza cambio audio', 'audioTime - normalizedOffset(offset)' in lyric),
  ('tempo negativo ante prima strofa', 'return state.anchorPosition + elapsed' in clock),
  ('nessuna modifica Web', not (root.parent/'web').exists()),

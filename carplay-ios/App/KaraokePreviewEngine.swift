@@ -24,6 +24,8 @@ final class KaraokePreviewEngine: ObservableObject {
     private var audioControlled = false
     private var lastPublishedPhrase = ""
     private var lastPublishDate = Date.distantPast
+    private var publishing = false
+    private var pendingPublish = false
 
     // Segno intuitivo: +0.5s RITARDA le parole rispetto all'audio.
     // Un valore negativo le anticipa. Non alteriamo la velocità del brano.
@@ -43,7 +45,7 @@ final class KaraokePreviewEngine: ObservableObject {
         rebuildLines()
         lastPublishedPhrase = current
         lastPublishDate = .now
-        Task { await publish() }
+        requestPublish()
     }
 
     func importLyrics(data: Data, filename: String, displayTitle: String? = nil) throws {
@@ -97,13 +99,59 @@ final class KaraokePreviewEngine: ObservableObject {
         lastDate = Date()
         let phrase = current
         if wasTruncated && displayedPosition >= lastWindowEnd - 8 { rebuildLines() }
-        // L'aggiornamento del ContentState e' una richiesta; iOS puo' comunque
-        // diradare l'effettivo ridisegno della schermata di blocco / CarPlay.
-        if changed || (phrase != lastPublishedPhrase && Date().timeIntervalSince(lastPublishDate) >= 2.0) {
+        // Aggiorna subito a ogni cambio frase, pausa o ripresa. Il heartbeat
+        // ogni 8s riancora il widget se un precedente aggiornamento e' perso.
+        // iOS puo' comunque sospendere il ridisegno Live Activity su CarPlay.
+        let now = Date()
+        if changed || phrase != lastPublishedPhrase ||
+            (playing && now.timeIntervalSince(lastPublishDate) >= 8.0) {
             lastPublishedPhrase = phrase
-            lastPublishDate = Date()
-            Task { await publish() }
+            lastPublishDate = now
+            requestPublish()
         }
+    }
+
+    /// Al ritorno in primo piano non ripartire dal primo verso: interrogare
+    /// il vero tempo dei player MP3 e recuperare la Live Activity esistente.
+    func reconcileOnForeground(audioTime: Double, isPlaying: Bool, isReady: Bool) {
+        guard isReady else {
+            // Una Live Activity lasciata da un processo terminato non ha piu'
+            // alcun lettore: rimuoverla anziche' mostrare l'intro bloccata.
+            if activity == nil {
+                for orphan in Activity<LeonKaraokeAttributes>.activities {
+                    Task { await orphan.end(nil, dismissalPolicy: .immediate) }
+                }
+            }
+            return
+        }
+        audioControlled = true
+        position = min(max(0, audioTime), duration)
+        playing = isPlaying
+        lastDate = .now
+        rebuildLines()
+        if activity == nil {
+            activity = Activity<LeonKaraokeAttributes>.activities.first {
+                $0.attributes.songTitle == songTitle
+            }
+        }
+        if activity == nil && isPlaying {
+            // Nuova Activity solo con app in primo piano (vincolo ActivityKit).
+            begin(shouldPlay: true)
+        } else if activity != nil {
+            lastPublishedPhrase = current
+            lastPublishDate = .now
+            requestPublish()
+        }
+        feedback = "Riallineamento effettuato sul tempo reale della musica."
+    }
+
+    /// Snapshot quando iOS porta la UI in background: la stima resta ancorata
+    /// all'orologio e si riallinea quando l'app torna attiva.
+    func snapshotOnBackground() {
+        guard audioControlled, activity != nil else { return }
+        lastPublishedPhrase = current
+        lastPublishDate = .now
+        requestPublish()
     }
 
     private func begin(shouldPlay: Bool) {
@@ -132,8 +180,10 @@ final class KaraokePreviewEngine: ObservableObject {
                 Task { @MainActor in self?.tick() }
             }
         }
-        feedback = "Timeline temporizzata inviata alla Live Activity. Verifica dimensioni e aggiornamento su CarPlay reale. \(wasTruncated ? "Testo lungo: finestre aggiornate finché l’app è attiva." : "")"
-        Task { await publish() }
+        feedback = "Live Activity avviata. Ritorno in app e cambi di strofa ora richiedono un riallineamento esplicito. \(wasTruncated ? "Testo lungo: finestre aggiornate finché l’app è attiva." : "")"
+        lastPublishedPhrase = current
+        lastPublishDate = .now
+        requestPublish()
     }
 
     // Dati passati esplicitamente dalla PWA via URL schema da un click utente.
@@ -173,14 +223,14 @@ final class KaraokePreviewEngine: ObservableObject {
         playing = false
         timer?.invalidate()
         timer = nil
-        Task { await publish() }
+        requestPublish()
     }
 
     func seek(to seconds: Double) {
         position = min(max(0, seconds), duration)
         lastDate = Date()
         rebuildLines()
-        Task { await publish() }
+        requestPublish()
     }
 
     func stop() {
@@ -215,19 +265,36 @@ final class KaraokePreviewEngine: ObservableObject {
         advanceClock()
         if playing && wasTruncated && displayedPosition >= lastWindowEnd - 8 {
             rebuildLines()
-            Task { await publish() }
+            requestPublish()
         }
         if playing && position >= duration {
             playing = false
             timer?.invalidate()
             timer = nil
-            Task { await publish() }
+            requestPublish()
         }
     }
 
-    private func publish() async {
-        guard let activity else { return }
-        await activity.update(ActivityContent(state: state(), staleDate: nil))
+    /// Serializza le richieste: una pausa/ripresa rapida non puo' lasciare
+    /// un aggiornamento piu' vecchio a sovrascrivere quello nuovo.
+    private func requestPublish() {
+        guard activity != nil else { return }
+        if publishing {
+            pendingPublish = true
+            return
+        }
+        publishing = true
+        Task { [weak self] in
+            guard let self else { return }
+            repeat {
+                self.pendingPublish = false
+                let snapshot = self.state()
+                if let activity = self.activity {
+                    await activity.update(ActivityContent(state: snapshot, staleDate: nil))
+                }
+            } while self.pendingPublish
+            self.publishing = false
+        }
     }
 }
 

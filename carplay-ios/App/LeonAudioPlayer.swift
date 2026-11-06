@@ -181,9 +181,22 @@ final class LeonAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private func startClock() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        let clock = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
+        clock.tolerance = 0.04
+        // .common evita il blocco del polling durante scroll/drag sullo schermo.
+        // Non impedisce a iOS di sospendere l'app in background.
+        RunLoop.main.add(clock, forMode: .common)
+        timer = clock
+    }
+
+    func refreshProgress() {
+        guard ready else { return }
+        if playing { syncPosition() }
+        refreshAudioRoute()
+        updateNowPlaying()
+        onProgress?(position, playing)
     }
 
     private func syncPosition() {
